@@ -1,22 +1,22 @@
-package Intuit::QuickBase;
+package HTTP::QuickBase;
 
-#Version $Id: QuickBase.pm,v 1.22 2001/04/09 14:22:21 cvonroes Exp $
+#Version $Id: QuickBase.pm,v 1.23 2001/04/11 19:25:45 cvonroes Exp $
 
-( $VERSION ) = '$Revision: 1.22 $ ' =~ /\$Revision:\s+([^\s]+)/;
+( $VERSION ) = '$Revision: 1.23 $ ' =~ /\$Revision:\s+([^\s]+)/;
 
 use strict;
 use LWP::UserAgent;
 
 =head1 NAME
 
-Intuit::QuickBase - Create a web shareable database in under a minute
+HTTP::QuickBase - Create a web shareable database in under a minute
 
 =head1 SYNOPSIS
 
  #see http://developer.intuit.com/quickbase for details of the underlying API
  
- use Intuit::QuickBase;
- $qdb = Intuit::QuickBase->new();
+ use HTTP::QuickBase;
+ $qdb = HTTP::QuickBase->new();
  
  #If you don't want to use HTTPS or your Perl installation doesn't support HTTPS then
  #make sure you have the "Allow non-SSL access (normally OFF)" checkbox checked on your
@@ -24,7 +24,7 @@ Intuit::QuickBase - Create a web shareable database in under a minute
  #page and then clicking on "Administration" under "SHORTCUTS". Then click on "Basic Properties".
  #To use this module in non-SSL mode invoke the QuickBase object like this:
  
- #$qdb = Intuit::QuickBase->new("http://www.quickbase.com/db");
+ #$qdb = HTTP::QuickBase->new('http://www.quickbase.com/db');
 
  $username="fred";
  $password="flinstone";
@@ -96,7 +96,7 @@ Intuit::QuickBase - Create a web shareable database in under a minute
 
 =head1 REQUIRES
 
-Perl5.005, LWP::UserAgent, Crypt::SSLeay
+Perl5.005, LWP::UserAgent, Crypt::SSLeay (optional unless you want to talk to QuickBase via HTTPS)
 
 =head1 SEE ALSO
 
@@ -108,7 +108,7 @@ Nothing
 
 =head1 DESCRIPTION
 
-Intuit::QuickBase allows you to manipulate QuickBase databases.  
+HTTP::QuickBase allows you to manipulate QuickBase databases.  
 Methods are provided for cloning databases, adding records, editing records, deleting records and retrieving records.
 All you need is a valid QuickBase account, although with anonymous access you can read from publically accessible QuickBase
 databases. To learn more about QuickBase please visit http://www.quickbase.com/
@@ -120,10 +120,10 @@ This module supports a single object that retains login state. You call the auth
 
 =over 4
 
-=item $qdb = new Intuit::QuickBase($URLprefix)
+=item $qdb = new HTTP::QuickBase($URLprefix)
 
 Creates and returns a 
-new Intuit::QuickBase object. 
+new HTTP::QuickBase object. 
 Use the optional $URLprefix to connect to QuickBase via HTTP instead of HTTPS.
 call the constructor with a URLprefix parameter of "http://www.quickbase.com/db/".
 QuickBase databases are by default not accessible via HTTP. To allow HTTP access to a
