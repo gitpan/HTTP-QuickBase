@@ -1,8 +1,8 @@
 package HTTP::QuickBase;
 
-#Version $Id: QuickBase.pm,v 1.38 2002/05/23 19:58:31 cvonroes Exp $
+#Version $Id: QuickBase.pm,v 1.39 2002/08/30 15:48:36 cvonroes Exp $
 
-( $VERSION ) = '$Revision: 1.38 $ ' =~ /\$Revision:\s+([^\s]+)/;
+( $VERSION ) = '$Revision: 1.39 $ ' =~ /\$Revision:\s+([^\s]+)/;
 
 use strict;
 use LWP::UserAgent;
@@ -15,7 +15,7 @@ HTTP::QuickBase - Create a web shareable database in under a minute
 
 =head1 VERSION
 
-$Revision: 1.38 $
+$Revision: 1.39 $
 
 =head1 SYNOPSIS
 
@@ -309,7 +309,7 @@ From the database identified by $QuickBaseID, returns an associative array of fi
 
 =over 4
 
-=item $qdb->DoQuery($QuickBaseID, $query, $clist, $slist, $options)
+=item $qdb->doQuery($QuickBaseID, $query, $clist, $slist, $options)
 
 From the database identified by $QuickBaseID, returns an array of
 associative arrays of field names and values of the records selected by
@@ -322,7 +322,7 @@ The sorting of the records is determined by $slist, a period delimited list of f
 
 Ascending or descending order of the sorts defined by $slist is controlled by $options.
 
-Please refer to https://www.quickbase.com/db/6mztyxu8?a=dr&r=2 for more details on the parameters for DoQuery.
+Please refer to https://www.quickbase.com/db/6mztyxu8?a=dr&r=2 for more details on the parameters for API_DoQuery.
 
 =back
 
@@ -534,6 +534,14 @@ if ($xml =~ /<rid>(.*)<\/rid>/ )
 return "";
 }
 
+sub ChangeRecordOwner($QuickBaseDBid, $rid, $newowner)
+{
+    my($self, $QuickBaseDBid, $rid, $newowner);
+    
+    my $content = "<qdbapi><rid>$rid</rid><newowner>$newowner</newowner></qdbapi>";
+    $self->PostAPIURL ($QuickBaseDBid, "API_ChangeRecordOwner", $content);
+    return"";
+}
 
 sub ChangePermissions($QuickBaseDBid, $usergroup, %permissions)
 {
@@ -1032,7 +1040,12 @@ sub purgeRecords ($QuickBaseID, $query)
 		return "";
 		}	
 	}
-	
+
+sub DoQuery ($QuickBaseID, $query, $clist, $slist, $options)
+	{
+	my ($self, $QuickBaseID, $query, $clist, $slist, $options)=@_;
+	return $self->doQuery ($QuickBaseID, $query, $clist, $slist, $options);
+	}	
 	
 sub doQuery ($QuickBaseID, $query, $clist, $slist, $options)
 	{
