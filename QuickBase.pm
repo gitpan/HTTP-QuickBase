@@ -1,11 +1,13 @@
 package HTTP::QuickBase;
 
-#Version $Id: QuickBase.pm,v 1.24 2001/04/11 21:33:10 cvonroes Exp $
+#Version $Id: QuickBase.pm,v 1.19 2001/04/05 20:01:44 cvonroes Exp $
 
-( $VERSION ) = '$Revision: 1.24 $ ' =~ /\$Revision:\s+([^\s]+)/;
+( $VERSION ) = '$Revision: 1.19 $ ' =~ /\$Revision:\s+([^\s]+)/;
 
 use strict;
 use LWP::UserAgent;
+
+=pod
 
 =head1 NAME
 
@@ -362,9 +364,9 @@ my($self, $username, $password) = @_;
 	return "";
 }
 
-sub getTicket ($username, $password)
+sub getTicket()
 {
-my($self, $username, $password) = @_;
+my($self) = @_;
     #First we have to get the authorization ticket
 	#We do this by posting the QuickBase username and password to QuickBase
 	#This is where we post the QuickBase username and password
