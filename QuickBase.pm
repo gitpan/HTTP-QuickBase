@@ -1,8 +1,8 @@
 package HTTP::QuickBase;
 
-#Version $Id: QuickBase.pm,v 1.23 2001/04/11 19:25:45 cvonroes Exp $
+#Version $Id: QuickBase.pm,v 1.24 2001/04/11 21:33:10 cvonroes Exp $
 
-( $VERSION ) = '$Revision: 1.23 $ ' =~ /\$Revision:\s+([^\s]+)/;
+( $VERSION ) = '$Revision: 1.24 $ ' =~ /\$Revision:\s+([^\s]+)/;
 
 use strict;
 use LWP::UserAgent;
@@ -76,6 +76,12 @@ HTTP::QuickBase - Create a web shareable database in under a minute
 		}
 	}
 
+ #Let's save the entire database to a local comma separated values (CSV) file.
+ 
+ open( CSV, ">my_qbd_snapshot.csv");
+ print CSV $qdb->getCompleteCSV($database_clone_id);
+ close CSV;	
+	
  #Where field number 10 contains Wilma (the query)
  #let's print out fields 10, 11, 12 and 15 (the clist)
  #sorted by field 14 (the slist)

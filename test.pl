@@ -1,7 +1,7 @@
 # $Id: test.pl,v 1.2 2001/04/02 01:12:52 karl Exp $
-use Intuit::QuickBase;
+use HTTP::QuickBase;
 
-my $qdb = Intuit::QuickBase->new();
+my $qdb = HTTP::QuickBase->new();
 $username="depositor";
 $password="Password";
 

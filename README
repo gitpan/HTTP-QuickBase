@@ -1,10 +1,10 @@
 HTTP::QuickBase - module wrapper for the QuickBase HTTP API
-Version 1.22
+Version 1.24
 by Claude_von_Roesgen@intuit.com
 http://www.vonroesgen.com
 
 REQUIRES
-Perl5.005, LWP::UserAgent, Crypt::SSLeay
+Perl5.005, LWP::UserAgent, Crypt::SSLeay (optional if you don't need to talk HTTPS to QuickBase)
 
 --------------------------------------------------------------------------------
 
@@ -15,7 +15,7 @@ http://developer.intuit.com/quickbase for details of the underlying QuickBase HT
 --------------------------------------------------------------------------------
 
 DESCRIPTION
-Intuit::QuickBase allows you to manipulate QuickBase databases.
+HTTP::QuickBase allows you to manipulate QuickBase databases.
 Methods are provided for cloning databases, adding records, editing records, 
 deleting records and retrieving records. All you need is a valid QuickBase account, 
 although with anonymous access you can read from publically accessible QuickBase databases.
