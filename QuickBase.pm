@@ -1,8 +1,8 @@
 package HTTP::QuickBase;
 
-#Version $Id: QuickBase.pm,v 1.45 2003/04/29 15:22:44 cvonroes Exp $
+#Version $Id: QuickBase.pm,v 1.46 2003/08/08 20:02:17 cvonroes Exp $
 
-( $VERSION ) = '$Revision: 1.45 $ ' =~ /\$Revision:\s+([^\s]+)/;
+( $VERSION ) = '$Revision: 1.46 $ ' =~ /\$Revision:\s+([^\s]+)/;
 
 use strict;
 use LWP::UserAgent;
@@ -16,7 +16,7 @@ HTTP::QuickBase - Create a web shareable database in under a minute
 
 =head1 VERSION
 
-$Revision: 1.45 $
+$Revision: 1.46 $
 
 =head1 SYNOPSIS
 
@@ -443,7 +443,7 @@ sub new
 }
 
 
-sub authenticate ($username, $password)
+sub authenticate ($$)
 {
 my($self, $username, $password) = @_;
 	$self->{'username'} = $username;
@@ -502,7 +502,7 @@ else
 	}
 }
 
-sub setProxy($proxyserver)
+sub setProxy($)
 {
 my($self, $proxyserver) = @_;
 $self->{'proxy'} = $proxyserver;
@@ -523,7 +523,7 @@ my($self) = shift;
 return $self->{'error'};	
 }
 
-sub AddRecord($QuickBaseDBid, %recorddata)
+sub AddRecord($%)
 {
 my($self, $QuickBaseDBid, %recorddata) = @_;
 my $name;
@@ -553,7 +553,7 @@ return "";
 }
 
 		
-sub ChangeRecordOwner($QuickBaseDBid, $rid, $newowner)
+sub ChangeRecordOwner($$$)
 {
     my($self, $QuickBaseDBid, $rid, $newowner);
     
@@ -562,7 +562,7 @@ sub ChangeRecordOwner($QuickBaseDBid, $rid, $newowner)
     return"";
 }
 
-sub ChangePermissions($QuickBaseDBid, $usergroup, %permissions)
+sub ChangePermissions($$%)
 {
 my($self, $QuickBaseDBid, $usergroup, %permissions) = @_;
 my $content =    "<qdbapi><uname>$usergroup</uname>";
@@ -647,7 +647,7 @@ if ($result =~ /<admin>(.*?)<\/admin>/){
 return %newPermissions;
 }
 
-sub DeleteRecord($QuickBaseDBid, $rid)
+sub DeleteRecord($$)
 {
 my($self, $QuickBaseDBid, $rid) = @_;
 
@@ -657,7 +657,7 @@ my $content =    "<qdbapi>".
 $self->PostAPIURL ($QuickBaseDBid, "API_DeleteRecord", $content)->content;
 }
 
-sub GetRecord($QuickBaseDBid, $rid)
+sub GetRecord($$)
 {
 my($self, $QuickBaseDBid, $rid) = @_;
 my $content;
@@ -739,7 +739,7 @@ $content =    "<qdbapi>".
 	return %record;
 }
 
-sub GetURL($QuickBaseDBid, $action)
+sub GetURL($$)
 {
 my($self, $QuickBaseDBid, $action) = @_;
 my $error;
@@ -781,7 +781,7 @@ if ($res->is_error) {
   return $res->content;
 }
 
-sub GetFile($QuickBaseDBid, $filename, $rid, $fid)
+sub GetFile($$$$)
 {
 my($self, $QuickBaseDBid, $filename, $rid, $fid) = @_;
 my $error;
@@ -817,7 +817,7 @@ if ($res->is_error) {
   return ($res->content, $res->headers);
 }
 
-sub PostURL($QuickBaseDBid, $action, $content, $content_type)
+sub PostURL($$$$)
 {
 my $self = shift;
 my $QuickBaseDBid = shift;
@@ -859,7 +859,7 @@ if ($res->content =~ /<errdetail>(.*?)<\/errdetail>/s)
 return $res;
 }
 
-sub PostAPIURL($QuickBaseDBid, $action, $content)
+sub PostAPIURL($$$)
 {
 my($self, $QuickBaseDBid, $action, $content) = @_;
 my $ua = new LWP::UserAgent;
@@ -920,13 +920,13 @@ if ($res->content =~ /<errdetail>(.*?)<\/errdetail>/s)
 return $res;
 }
 
-sub getoneBaseIDbyName($dbName)
+sub getoneBaseIDbyName($)
 {
 my ($self, $dbName)= @_;
 return $self->getIDbyName($dbName);
 }
 
-sub getIDbyName($dbName)
+sub getIDbyName($)
 {
 my ($self, $dbName)= @_;
 my $content;
@@ -943,7 +943,7 @@ else
 }
 
 
-sub cloneDatabase ($QuickBaseID, $Name, $Description)
+sub cloneDatabase ($$$)
 	{
 	my ($self, $QuickBaseID, $Name, $Description)=@_;
 	my $content;
@@ -958,7 +958,7 @@ sub cloneDatabase ($QuickBaseID, $Name, $Description)
 		}
 	}
 
-sub createDatabase ($Name, $Description)
+sub createDatabase ($$)
 	{
 	my ($self, $Name, $Description)=@_;
 	my $content;
@@ -973,7 +973,7 @@ sub createDatabase ($Name, $Description)
 		}
 	}	
 
-sub addField ($QuickBaseID, $label, $type, $mode)
+sub addField ($$$$)
 	{
 	my ($self, $QuickBaseID, $label, $type, $mode)=@_;
 	my $content;
@@ -996,7 +996,7 @@ sub addField ($QuickBaseID, $label, $type, $mode)
 		}	
 	}
 
-sub deleteField ($QuickBaseID, $fid)
+sub deleteField ($$)
 	{
 	my ($self, $QuickBaseID, $fid)=@_;
 	my $content;
@@ -1004,7 +1004,7 @@ sub deleteField ($QuickBaseID, $fid)
 	my $res = $self->PostAPIURL ($QuickBaseID, "API_DeleteField", $content);
 	}
 	
-sub setFieldProperties ($QuickBaseID, $fid, %properties)
+sub setFieldProperties ($$%)
 	{
 	my ($self, $QuickBaseID, $fid, %properties)=@_;
 	my $content;
@@ -1027,7 +1027,7 @@ sub setFieldProperties ($QuickBaseID, $fid, %properties)
 	}
 
 
-sub purgeRecords ($QuickBaseID, $query)
+sub purgeRecords ($$)
 	{
 	my ($self, $QuickBaseID, $query)=@_;
 	
@@ -1054,13 +1054,13 @@ sub purgeRecords ($QuickBaseID, $query)
 		}	
 	}
 
-sub DoQuery ($QuickBaseID, $query, $clist, $slist, $options)
+sub DoQuery ($$$$$)
 	{
 	my ($self, $QuickBaseID, $query, $clist, $slist, $options)=@_;
 	return $self->doQuery ($QuickBaseID, $query, $clist, $slist, $options);
 	}	
 	
-sub doQuery ($QuickBaseID, $query, $clist, $slist, $options)
+sub doQuery ($$$$$)
 	{
 	my ($self, $QuickBaseID, $query, $clist, $slist, $options)=@_;
 	
@@ -1116,7 +1116,7 @@ sub doQuery ($QuickBaseID, $query, $clist, $slist, $options)
 	return @result;
 	}
 	
-sub getCompleteCSV ($QuickBaseID)
+sub getCompleteCSV ($)
 	{
 	my ($self, $QuickBaseID)=@_;
 	my $content;
@@ -1133,7 +1133,7 @@ sub getCompleteCSV ($QuickBaseID)
 	return $self->PostAPIURL ($QuickBaseID, "API_GenResultsTable", $content)->content;
 	}
 
-sub GetRIDs ($QuickBaseID)
+sub GetRIDs ($)
 {
 	my ($self, $QuickBaseID) = @_;
 	my $content="<qdbapi></qdbapi>";
@@ -1145,7 +1145,7 @@ sub GetRIDs ($QuickBaseID)
 	return @rids;
 }
 
-sub EditRecord ($QuickBaseID, $rid, %recorddata)
+sub EditRecord ($$%)
 {
 	my ($self, $QuickBaseID, $rid, %recorddata) = @_;
 	my $name;
@@ -1164,7 +1164,7 @@ foreach $name (keys(%recorddata))
 	return $res->content;
 }
 
-sub EditRecordWithUpdateID ($QuickBaseID, $rid, $update_id, %recorddata)
+sub EditRecordWithUpdateID ($$$%)
 {
 	my ($self, $QuickBaseID, $rid, $update_id, %recorddata) = @_;
 	my $name;
@@ -1190,7 +1190,7 @@ foreach $name (keys(%recorddata))
 }
 
 
-sub ImportFromCSV ($QuickBaseID, $CSVData, $clist, $skipfirst)
+sub ImportFromCSV ($$$$)
 {
  	my ($self, $QuickBaseID, $CSVData, $clist, $skipfirst) = @_;
 	my $content = "<qdbapi><clist>$clist</clist>";
@@ -1206,7 +1206,7 @@ sub ImportFromCSV ($QuickBaseID, $CSVData, $clist, $skipfirst)
 }
 
 
-sub GetNextField ($datapointer, $delim, $offsetpointer, $fieldpointer)
+sub GetNextField ($$$$)
 	{
 	my ($self, $datapointer, $delim, $offsetpointer, $fieldpointer)=@_;
 	my $BEFORE_FIELD=0;
@@ -1338,7 +1338,7 @@ sub GetNextField ($datapointer, $delim, $offsetpointer, $fieldpointer)
 		}
 	}
 
-sub GetNextLine ($data, $delim, $offsetpointer, $fieldpointer, $line, $lineIsEmptyPtr)
+sub GetNextLine ($$$$$$)
 	{
 	my ($self, $data, $delim, $offsetpointer, $fieldpointer, $line, $lineIsEmptyPtr)=@_;
 	my $false=0;
@@ -1372,7 +1372,7 @@ sub GetNextLine ($data, $delim, $offsetpointer, $fieldpointer, $line, $lineIsEmp
 	}
 
 
-sub ParseDelimited ($data, $delim)
+sub ParseDelimited ($$)
 	{
 	my ($self, $data, $delim)=@_;
 	my @output;
@@ -1414,7 +1414,7 @@ sub ParseDelimited ($data, $delim)
 	return @output;
 
 	}
-sub xml_escape ($rest) {
+sub xml_escape ($) {
     my ($self, $rest) = @_;
 	unless(defined($rest)){return "";}
     $rest   =~ s/&/&amp;/g;	
@@ -1424,7 +1424,7 @@ sub xml_escape ($rest) {
     return $rest;
 } 
 
-sub xml_unescape ($rest) {
+sub xml_unescape ($) {
     my ($self, $rest) = @_;
 	unless(defined($rest)){return "";}
     $rest   =~ s/<br\/>/\n/ig;
@@ -1436,7 +1436,7 @@ sub xml_unescape ($rest) {
 	return $rest;
 } 
 
-sub encode32 ($number){
+sub encode32 ($){
 	my ($self, $number) = @_;
 	my $result = "";
 	while ($number > 0){
@@ -1447,7 +1447,7 @@ sub encode32 ($number){
 	return $result;
 }
 	
-sub hash32 ($number){
+sub hash32 ($){
 	my ($self, $number) = @_;
 	if($number == 0)  {return 'a';}
     if($number == 1)  {return 'b';}
@@ -1485,7 +1485,7 @@ sub hash32 ($number){
 
 
 
-sub unencode32 ($number){
+sub unencode32 ($){
   my ($self, $number) = @_;
   my $result = 0;
   while ($number ne ""){
@@ -1499,7 +1499,7 @@ sub unencode32 ($number){
 
 
 
-sub unhash32 ($number) {
+sub unhash32 ($) {
   my ($self, $number) = @_;
   if($number eq 'a')  {return 0;}
   if($number eq 'b')  {return 1;}
@@ -1535,7 +1535,7 @@ sub unhash32 ($number) {
   if($number eq '9') {return 31;}
 }
 
-sub createFieldXML($tag, $value)
+sub createFieldXML($$)
 {
  	my($self, $tag, $value) = @_;
 	my $nameattribute;
