@@ -1,8 +1,8 @@
 package HTTP::QuickBase;
 
-#Version $Id: QuickBase.pm,v 1.46 2003/08/08 20:02:17 cvonroes Exp $
+#Version $Id: QuickBase.pm,v 1.47 2003/10/18 10:47:13 cvonroes Exp $
 
-( $VERSION ) = '$Revision: 1.46 $ ' =~ /\$Revision:\s+([^\s]+)/;
+( $VERSION ) = '$Revision: 1.47 $ ' =~ /\$Revision:\s+([^\s]+)/;
 
 use strict;
 use LWP::UserAgent;
@@ -16,11 +16,11 @@ HTTP::QuickBase - Create a web shareable database in under a minute
 
 =head1 VERSION
 
-$Revision: 1.46 $
+$Revision: 1.47 $
 
 =head1 SYNOPSIS
 
- # see http://developer.intuit.com/quickbase for details of the underlying API.
+ # see https://www.quickbase.com/up/6mztyxu8/g/rc7/en/ for details of the underlying API.
  
  use HTTP::QuickBase;
  $qdb = HTTP::QuickBase->new();
@@ -115,7 +115,7 @@ Perl5.005, LWP::UserAgent, Crypt::SSLeay (optional unless you want to talk to Qu
 
 =head1 SEE ALSO
 
-http://developer.intuit.com/quickbase for details of the underlying QuickBase HTTP API
+https://www.quickbase.com/up/6mztyxu8/g/rc7/en/ for details of the underlying QuickBase HTTP API
 
 =head1 EXPORTS
 
@@ -377,14 +377,14 @@ The second element of the returned array is return value from the headers method
 
 Retrieve the error code returned from QuickBase.
 Please refer to the
-<a href="http://developer.intuit.com/quickbase/tools/QuickBaseAPI.html">
+<a href="https://www.quickbase.com/up/6mztyxu8/g/rc7/en/">
 Appendix A for error code details.
 
 =item $qdb->errortext()
 
 Retrieve the error text returned from QuickBase.
 Please refer to
-<a href="http://developer.intuit.com/quickbase/tools/QuickBaseAPI.html">
+<a href="https://www.quickbase.com/up/6mztyxu8/g/rc7/en/">
 Appendix A for all possible error messages.
 
 
@@ -401,7 +401,7 @@ None
 
 All errors are reported by the methods error and errortext. For a
 complete list of errors, please visit
-http://developer.intuit.com/quickbase/tools/QuickBaseAPI.html and scroll
+https://www.quickbase.com/up/6mztyxu8/g/rc7/en/ and scroll
 down to Appendix A.
 
 =head1 AUTHOR
@@ -749,7 +749,7 @@ unless( $action =~ /^act=API_|\&act=API_/i)
 	$self->{'error'} = "1";
 	$self->{'errortext'} = "Error: You're using a QuickBase URL that is not part of the HTTP API. ". $action . "\n"
 		. "Please use only actions that start with 'API_' i.e. act=API_GetNumRecords.\n"
-		. "Please refer to the <a href='http://developer.intuit.com/quickbase/'>QuickBase HTTP API documentation</a>.";
+		. "Please refer to the <a href='https://www.quickbase.com/up/6mztyxu8/g/rc7/en/'>QuickBase HTTP API documentation</a>.";
 	return $self->{'errortext'};
 	}
 
