@@ -1,8 +1,8 @@
 package HTTP::QuickBase;
 
-#Version $Id: QuickBase.pm,v 1.19 2001/04/05 20:01:44 cvonroes Exp $
+#Version $Id: QuickBase.pm,v 1.26 2001/04/17 19:54:49 cvonroes Exp $
 
-( $VERSION ) = '$Revision: 1.19 $ ' =~ /\$Revision:\s+([^\s]+)/;
+( $VERSION ) = '$Revision: 1.26 $ ' =~ /\$Revision:\s+([^\s]+)/;
 
 use strict;
 use LWP::UserAgent;
@@ -535,7 +535,15 @@ if ($result =~ /<admin>(.*?)<\/admin>/){
 return %newPermissions;
 }
 
+sub DeleteRecord($QuickBaseDBid, $rid)
+{
+my($self, $QuickBaseDBid, $rid) = @_;
 
+my $content =    "<qdbapi>".
+              " <rid>$rid</rid>".
+              "</qdbapi>";
+$self->PostAPIURL ($QuickBaseDBid, "API_DeleteRecord", $content)->content;
+}
 
 sub GetRecord($QuickBaseDBid, $rid)
 {
@@ -607,9 +615,9 @@ $content =    "<qdbapi>".
 	if ($fieldname)
 		{
 		$fieldname = $self->xml_unescape($fieldname);
-		if(defined ($fieldprintable)){
+		if($fieldprintable){
 		  		   $record{$fieldname} = $self->xml_unescape($fieldprintable);							   
-		  }elsif(defined($fieldvalue)){
+		  }elsif($fieldvalue){
 		  			$record{$fieldname} = $self->xml_unescape($fieldvalue);
 		  	}
 		}
