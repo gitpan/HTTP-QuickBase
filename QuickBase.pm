@@ -1,8 +1,8 @@
 package HTTP::QuickBase;
 
-#Version $Id: QuickBase.pm,v 1.35 2002/02/25 21:40:35 cvonroes Exp $
+#Version $Id: QuickBase.pm,v 1.36 2002/03/02 03:03:58 cvonroes Exp $
 
-( $VERSION ) = '$Revision: 1.35 $ ' =~ /\$Revision:\s+([^\s]+)/;
+( $VERSION ) = '$Revision: 1.36 $ ' =~ /\$Revision:\s+([^\s]+)/;
 
 use strict;
 use LWP::UserAgent;
@@ -15,7 +15,7 @@ HTTP::QuickBase - Create a web shareable database in under a minute
 
 =head1 VERSION
 
-$Revision: 1.35 $
+$Revision: 1.36 $
 
 =head1 SYNOPSIS
 
@@ -897,7 +897,7 @@ sub getIDbyName($dbName)
 {
 my ($self, $dbName)= @_;
 my $content;
-$content = "<qdbapi><dbname>$dbName</dbname></qdbapi>";
+$content = "<qdbapi><dbname>".$self->xml_escape($dbName)."</dbname></qdbapi>";
 my $res = $self->PostAPIURL ("main", "API_FindDBByName", $content);
 
 if($res->content =~ /<dbid>(.*)<\/dbid>/ ){
@@ -914,7 +914,7 @@ sub cloneDatabase ($QuickBaseID, $Name, $Description)
 	{
 	my ($self, $QuickBaseID, $Name, $Description)=@_;
 	my $content;
-	$content = "<qdbapi><newdbname>$Name</newdbname><newdbdesc>$Description</newdbdesc></qdbapi>";
+	$content = "<qdbapi><newdbname>".$self->xml_escape($Name)."</newdbname><newdbdesc>".$self->xml_escape($Description)."</newdbdesc></qdbapi>";
 	my $res = $self->PostAPIURL ($QuickBaseID, "API_CloneDatabase", $content);
 	if($res->content =~ /<newdbid>(.*)<\/newdbid>/ ){
 		return $1;
@@ -929,7 +929,7 @@ sub createDatabase ($Name, $Description)
 	{
 	my ($self, $Name, $Description)=@_;
 	my $content;
-	$content = "<qdbapi><dbname>$Name</dbname><dbdesc>$Description</dbdesc></qdbapi>";
+	$content = "<qdbapi><dbname>".$self->xml_escape($Name)."</dbname><dbdesc>".$self->xml_escape($Description)."</dbdesc></qdbapi>";
 	my $res = $self->PostAPIURL ("main", "API_CreateDatabase", $content);
 	if($res->content =~ /<dbid>(.*)<\/dbid>/ ){
 		return $1;
@@ -944,7 +944,7 @@ sub addField ($QuickBaseID, $label, $type, $mode)
 	{
 	my ($self, $QuickBaseID, $label, $type, $mode)=@_;
 	my $content;
-	$content = "<qdbapi><label>$label</label><type>$type</type>";
+	$content = "<qdbapi><label>".$self->xml_escape($label)."</label><type>$type</type>";
 	if ($mode)
 	   {
 	   $content .= "<mode>virtual</mode></qdbapi>";
@@ -980,7 +980,7 @@ sub setFieldProperties ($QuickBaseID, $fid, %properties)
 	$content = "<qdbapi><fid>$fid</fid>";
 	foreach $property (keys %properties)
 			{
-			$content .= "<$property>$properties{$property}</$property>";
+			$content .= "<$property>".$self->xml_escape($properties{$property})."</$property>";
 			}
    $content .= "</qdbapi>";		
 	my $res = $self->PostAPIURL ($QuickBaseID, "API_SetFieldProperties", $content);
