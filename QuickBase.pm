@@ -1,8 +1,8 @@
 package HTTP::QuickBase;
 
-#Version $Id: QuickBase.pm,v 1.47 2003/10/18 10:47:13 cvonroes Exp $
+#Version $Id: QuickBase.pm,v 1.48 2004/04/21 16:53:47 cvonroes Exp $
 
-( $VERSION ) = '$Revision: 1.47 $ ' =~ /\$Revision:\s+([^\s]+)/;
+( $VERSION ) = '$Revision: 1.48 $ ' =~ /\$Revision:\s+([^\s]+)/;
 
 use strict;
 use LWP::UserAgent;
@@ -16,7 +16,7 @@ HTTP::QuickBase - Create a web shareable database in under a minute
 
 =head1 VERSION
 
-$Revision: 1.47 $
+$Revision: 1.48 $
 
 =head1 SYNOPSIS
 
@@ -1548,41 +1548,39 @@ sub createFieldXML($$)
     	$nameattribute = "name";
     	}
 	if(ref($value) eq "ARRAY")
-		{
-		if($$value[0] =~ /^file/i)
-			{
-			#This is a file attachment!
-            my $filehandle;
-			my $filename = "";
-            my $buffer = "";	
-			my $filecontents = "";
-			
-			if($$value[1] =~ /[\\\/]([^\/\\]+)$/)
-				{
-				$filename = $1;
-				}
-			else
-				{
-				$filename = $$value[1];
-				}
-            unless(open($filehandle, "<$$value[1]"))
-           		{
-        		$filecontents = encode_base64("Sorry QuickBase could not open the file '$$value[1]' for input, for upload to this field in this record.", "");
-           		}									
-            
-            binmode $filehandle;
-            while (read($filehandle, $buffer, 60*57))
-            	{
-            	$filecontents .= encode_base64($buffer, "");
-            	}
-            return "<field $nameattribute='$tag' filename=\"".$self->xml_escape($filename)."\">".$filecontents."</field>";
-			}
-		}
+            {
+            if($$value[0] =~ /^file/i)
+                {
+                #This is a file attachment!
+                my $filename = "";
+                my $buffer = "";	
+                my $filecontents = "";
+                if($$value[1] =~ /[\\\/]([^\/\\]+)$/)
+                    {
+                    $filename = $1;
+                    }
+                else
+                    {
+                    $filename = $$value[1];
+                    }
+                unless(open(FORUPLOADTOQUICKBASE, "<$$value[1]"))
+                    {
+                    $filecontents = encode_base64("Sorry QuickBase could not open the file '$$value[1]' for input, for upload to this field in this record.", "");
+                    }									
+                binmode FORUPLOADTOQUICKBASE;
+                while (read(FORUPLOADTOQUICKBASE, $buffer, 60*57))
+                    {
+                    $filecontents .= encode_base64($buffer, "");
+                    }
+                close FORUPLOADTOQUICKBASE;
+                return "<field $nameattribute='$tag' filename=\"".$self->xml_escape($filename)."\">".$filecontents."</field>";
+                }
+            }
 	else
-		{
-		$value = $self->xml_escape($value);
-		return "<field name='$tag'>$value</field>";
-		}
+            {
+            $value = $self->xml_escape($value);
+            return "<field name='$tag'>$value</field>";
+            }
 }
 
 
