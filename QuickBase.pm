@@ -1,8 +1,8 @@
 package HTTP::QuickBase;
 
-#Version $Id: QuickBase.pm,v 1.44 2003/03/19 12:39:04 srevilak Exp $
+#Version $Id: QuickBase.pm,v 1.45 2003/04/29 15:22:44 cvonroes Exp $
 
-( $VERSION ) = '$Revision: 1.44 $ ' =~ /\$Revision:\s+([^\s]+)/;
+( $VERSION ) = '$Revision: 1.45 $ ' =~ /\$Revision:\s+([^\s]+)/;
 
 use strict;
 use LWP::UserAgent;
@@ -16,7 +16,7 @@ HTTP::QuickBase - Create a web shareable database in under a minute
 
 =head1 VERSION
 
-$Revision: 1.44 $
+$Revision: 1.45 $
 
 =head1 SYNOPSIS
 
@@ -64,10 +64,10 @@ $Revision: 1.44 $
  $state = "Stonia";
  $zip = "99999-1234";
  $comments = "Hanna Barbara the king of Saturday morning cartoons.";
- #if you want to attach a file you need to create an array with the first member of the array set to "file" and the second 
+ #if you want to attach a file you need to create an array with the first member of the array set to the literal string "file" and the second 
  #member of the array set to the full path of the file.
  $attached_file = ["file", "c:\\my documents\\bedrock.txt"];
- %record_data=("Name" => $Name,"Daytime Phone" => $dphone, "Evening Phone" =>$ephone,"Email Address" => $email, "Street Address 1" => $address1,"Street Address 2" => $address2,"City" => $city,"State"=>$state,"Zip Code"=>$zip, "Comments" => $comments );
+ %record_data=("Name" => $Name,"Daytime Phone" => $dphone, "Evening Phone" =>$ephone,"Email Address" => $email, "Street Address 1" => $address1,"Street Address 2" => $address2,"City" => $city,"State"=>$state,"Zip Code"=>$zip, "Comments" => $comments , "Attached File" => $attached_file );
 
  $record_id = $qdb->AddRecord($database_clone_id, %record_data);
 
@@ -260,7 +260,7 @@ Returns the record id of the new record. The keys of the associative array %reco
 field names of the database. If the key begins with the number one through nine and contains only numbers
 then the field identifiers are scanned for a match instead.
 If a particular key matches then the corresponding field in the new record is set to the value associated with the key.
-If you want to attach a file you need to create an array with the first member of the array set to 'file' and the second 
+If you want to attach a file you need to create an array with the first member of the array set to the string literal 'file' and the second 
 member of the array set to the full path of the file. Then the value of the key corresponding to the file attachment field 
 should be set to a reference which points to this two member array.  
 
@@ -301,7 +301,7 @@ Any field in the database that can be modified and that has its field label or f
 field names of the database. If the key begins with the number one through nine and contains only numbers
 then the field identifiers are scanned for a match instead.
 If a particular key matches then the corresponding field in the record is set to the value associated with the key.
-If you want to modify a file attachment field, you need to create an array with the first member of the array set to 'file' and the second 
+If you want to modify a file attachment field, you need to create an array with the first member of the array set to the string literal 'file' and the second 
 member of the array set to the full path of the file. Then the value of the key corresponding to the file attachment field 
 should be set to a reference which points to this two member array.  
 
@@ -1557,7 +1557,7 @@ sub createFieldXML($tag, $value)
             my $buffer = "";	
 			my $filecontents = "";
 			
-			if($$value[1] =~ /[\\\/]([^\/\\]+)/)
+			if($$value[1] =~ /[\\\/]([^\/\\]+)$/)
 				{
 				$filename = $1;
 				}
