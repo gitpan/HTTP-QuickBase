@@ -1,8 +1,8 @@
 package HTTP::QuickBase;
 
-#Version $Id: QuickBase.pm,v 1.36 2002/03/02 03:03:58 cvonroes Exp $
+#Version $Id: QuickBase.pm,v 1.38 2002/05/23 19:58:31 cvonroes Exp $
 
-( $VERSION ) = '$Revision: 1.36 $ ' =~ /\$Revision:\s+([^\s]+)/;
+( $VERSION ) = '$Revision: 1.38 $ ' =~ /\$Revision:\s+([^\s]+)/;
 
 use strict;
 use LWP::UserAgent;
@@ -15,7 +15,7 @@ HTTP::QuickBase - Create a web shareable database in under a minute
 
 =head1 VERSION
 
-$Revision: 1.36 $
+$Revision: 1.38 $
 
 =head1 SYNOPSIS
 
@@ -451,6 +451,10 @@ my($self) = @_;
 		$self->{'error'} = $1;
 		$self->{'errortext'} = $2;
 		}
+	if ($res->content =~ /<errdetail>(.*?)<\/errdetail>/s)
+		{
+		$self->{'errortext'} = $1;
+		}		
 	if ($self->{'error'} eq '0')
 		{
 		$res->content =~ /<ticket>(.*?)<\/ticket>/s;
@@ -828,6 +832,10 @@ if($res->is_error()){
 $res->content =~ /<errcode>(.*?)<\/errcode>.*?<errtext>(.*?)<\/errtext>/s ;
 $self->{'error'} = $1;
 $self->{'errortext'} = $2;
+if ($res->content =~ /<errdetail>(.*?)<\/errdetail>/s)
+    {
+    $self->{'errortext'} = $1;
+	}		
 return $res;
 }
 
@@ -884,6 +892,10 @@ else
 $res->content =~ /<errcode>(.*?)<\/errcode>.*?<errtext>(.*?)<\/errtext>/s;
 $self->{'error'} = $1;
 $self->{'errortext'} = $2;
+if ($res->content =~ /<errdetail>(.*?)<\/errdetail>/s)
+    {
+    $self->{'errortext'} = $1;
+    }		
 return $res;
 }
 
@@ -1130,6 +1142,20 @@ foreach $name (keys(%recorddata))
 	return $res->content;
 }
 
+sub ImportFromCSV ($QuickBaseID, $CSVData, $clist, $skipfirst)
+{
+ 	my ($self, $QuickBaseID, $CSVData, $clist, $skipfirst) = @_;
+	my $content = "<qdbapi><clist>$clist</clist>";
+	
+	$content .= "<records_csv><![CDATA[$CSVData]]></records_csv>";
+	if($skipfirst)
+		{
+		$content .= "<skipfirst>1</skipfirst>";
+		} 
+	$content .= "</qdbapi>";
+	my $res = $self->PostAPIURL ($QuickBaseID, "API_ImportFromCSV", $content);
+	return $res->content;
+}
 
 
 sub GetNextField ($datapointer, $delim, $offsetpointer, $fieldpointer)
