@@ -1,11 +1,12 @@
 package HTTP::QuickBase;
 
-#Version $Id: QuickBase.pm,v 1.41 2002/09/20 15:00:57 cvonroes Exp $
+#Version $Id: QuickBase.pm,v 1.44 2003/03/19 12:39:04 srevilak Exp $
 
-( $VERSION ) = '$Revision: 1.41 $ ' =~ /\$Revision:\s+([^\s]+)/;
+( $VERSION ) = '$Revision: 1.44 $ ' =~ /\$Revision:\s+([^\s]+)/;
 
 use strict;
 use LWP::UserAgent;
+use MIME::Base64 qw(encode_base64);
 
 =pod
 
@@ -15,7 +16,7 @@ HTTP::QuickBase - Create a web shareable database in under a minute
 
 =head1 VERSION
 
-$Revision: 1.41 $
+$Revision: 1.44 $
 
 =head1 SYNOPSIS
 
@@ -63,6 +64,9 @@ $Revision: 1.41 $
  $state = "Stonia";
  $zip = "99999-1234";
  $comments = "Hanna Barbara the king of Saturday morning cartoons.";
+ #if you want to attach a file you need to create an array with the first member of the array set to "file" and the second 
+ #member of the array set to the full path of the file.
+ $attached_file = ["file", "c:\\my documents\\bedrock.txt"];
  %record_data=("Name" => $Name,"Daytime Phone" => $dphone, "Evening Phone" =>$ephone,"Email Address" => $email, "Street Address 1" => $address1,"Street Address 2" => $address2,"City" => $city,"State"=>$state,"Zip Code"=>$zip, "Comments" => $comments );
 
  $record_id = $qdb->AddRecord($database_clone_id, %record_data);
@@ -253,7 +257,12 @@ Returns nothing.
 =item $qdb->AddRecord($QuickBaseID, %recorddata)
 
 Returns the record id of the new record. The keys of the associative array %recorddata are scanned for matches with the 
-field names of the database. If a particular key matches then the corresponding field in the new record is set to the value associated with the key.  
+field names of the database. If the key begins with the number one through nine and contains only numbers
+then the field identifiers are scanned for a match instead.
+If a particular key matches then the corresponding field in the new record is set to the value associated with the key.
+If you want to attach a file you need to create an array with the first member of the array set to 'file' and the second 
+member of the array set to the full path of the file. Then the value of the key corresponding to the file attachment field 
+should be set to a reference which points to this two member array.  
 
 =back
 
@@ -287,8 +296,18 @@ Please refer to https://www.quickbase.com/db/6mztyxu8?a=dr&r=2 for more details 
 
 Modifies the record defined by record id $rid in the database defined by database ID $QuickBaseID.
 
-Any field in the database that can be modified and that has its field label as a key in the associative array
-%recorddata will be modified to the value associated with the key.
+Any field in the database that can be modified and that has its field label or field identifer as a key in the associative array
+%recorddata will be modified to the value associated with the key. The keys of the associative array %recorddata are scanned for matches with the 
+field names of the database. If the key begins with the number one through nine and contains only numbers
+then the field identifiers are scanned for a match instead.
+If a particular key matches then the corresponding field in the record is set to the value associated with the key.
+If you want to modify a file attachment field, you need to create an array with the first member of the array set to 'file' and the second 
+member of the array set to the full path of the file. Then the value of the key corresponding to the file attachment field 
+should be set to a reference which points to this two member array.  
+
+
+Use $qdb->EditRecordWithUpdateID($QuickBaseID, $rid, $update_id, %recorddata) to take advantage of conflict detection.
+If $update_id is supplied then the edit will only succeed if the record's current update_id matches.
 
 Returns the XML response from QuickBase after modifying every valid field refered to in %recorddata.
 
@@ -509,18 +528,17 @@ sub AddRecord($QuickBaseDBid, %recorddata)
 my($self, $QuickBaseDBid, %recorddata) = @_;
 my $name;
 my $content;
-my $value;
+my $filecontents;
+my $filebuffer;
 my $tag;
 
 $content = "<qdbapi>";
 foreach $name (keys(%recorddata))
 	{
-	$value = $recorddata{$name};
-	$value = $self->xml_escape($value);
 	$tag=$name;
 	$tag =~tr/A-Z/a-z/;
 	$tag=~s/[^a-z0-9]/_/g;
-	$content .= "<field name='$tag'>$value</field>";
+	$content .= $self->createFieldXML($tag, $recorddata{$name});
 	}
 
 $content .= "</qdbapi>";
@@ -534,6 +552,7 @@ if ($xml =~ /<rid>(.*)<\/rid>/ )
 return "";
 }
 
+		
 sub ChangeRecordOwner($QuickBaseDBid, $rid, $newowner)
 {
     my($self, $QuickBaseDBid, $rid, $newowner);
@@ -1131,7 +1150,28 @@ sub EditRecord ($QuickBaseID, $rid, %recorddata)
 	my ($self, $QuickBaseID, $rid, %recorddata) = @_;
 	my $name;
 	my $content = "<qdbapi><rid>$rid</rid>";
+	my $tag;
+	
+foreach $name (keys(%recorddata))
+	{
+	$tag=$name;
+	$tag =~tr/A-Z/a-z/;
+	$tag=~s/[^a-z0-9]/_/g;
+	$content .= $self->createFieldXML($tag, $recorddata{$name});
+	}
+	$content .= "</qdbapi>";
+	my $res = $self->PostAPIURL ($QuickBaseID, "API_EditRecord", $content);
+	return $res->content;
+}
+
+sub EditRecordWithUpdateID ($QuickBaseID, $rid, $update_id, %recorddata)
+{
+	my ($self, $QuickBaseID, $rid, $update_id, %recorddata) = @_;
+	my $name;
+	my $content = "<qdbapi><rid>$rid</rid>";
 	my ($value, $tag);
+	$content .= "<update_id>$update_id</update_id>";
+
 
 foreach $name (keys(%recorddata))
 	{
@@ -1141,13 +1181,14 @@ foreach $name (keys(%recorddata))
 	$tag =~tr/A-Z/a-z/;
 	$tag=~s/[^a-z0-9]/_/g;
 
-	$content .= "<field name='$tag'>$value</field>";
+	$content .= $self->createFieldXML($tag, $recorddata{$name});
 	}
 
 	$content .= "</qdbapi>";
 	my $res = $self->PostAPIURL ($QuickBaseID, "API_EditRecord", $content);
 	return $res->content;
 }
+
 
 sub ImportFromCSV ($QuickBaseID, $CSVData, $clist, $skipfirst)
 {
@@ -1492,6 +1533,56 @@ sub unhash32 ($number) {
   if($number eq '7') {return 29;}
   if($number eq '8') {return 30;}
   if($number eq '9') {return 31;}
+}
+
+sub createFieldXML($tag, $value)
+{
+ 	my($self, $tag, $value) = @_;
+	my $nameattribute;
+    if($tag =~ /^[1-9]\d*$/)
+    	{
+    	$nameattribute = "fid";
+    	}
+    else
+    	{
+    	$nameattribute = "name";
+    	}
+	if(ref($value) eq "ARRAY")
+		{
+		if($$value[0] =~ /^file/i)
+			{
+			#This is a file attachment!
+            my $filehandle;
+			my $filename = "";
+            my $buffer = "";	
+			my $filecontents = "";
+			
+			if($$value[1] =~ /[\\\/]([^\/\\]+)/)
+				{
+				$filename = $1;
+				}
+			else
+				{
+				$filename = $$value[1];
+				}
+            unless(open($filehandle, "<$$value[1]"))
+           		{
+        		$filecontents = encode_base64("Sorry QuickBase could not open the file '$$value[1]' for input, for upload to this field in this record.", "");
+           		}									
+            
+            binmode $filehandle;
+            while (read($filehandle, $buffer, 60*57))
+            	{
+            	$filecontents .= encode_base64($buffer, "");
+            	}
+            return "<field $nameattribute='$tag' filename=\"".$self->xml_escape($filename)."\">".$filecontents."</field>";
+			}
+		}
+	else
+		{
+		$value = $self->xml_escape($value);
+		return "<field name='$tag'>$value</field>";
+		}
 }
 
 
