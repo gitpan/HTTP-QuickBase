@@ -1,8 +1,8 @@
 package HTTP::QuickBase;
 
-#Version $Id: QuickBase.pm,v 1.48 2004/04/21 16:53:47 cvonroes Exp $
+#Version $Id: QuickBase.pm,v 1.49 2004/04/22 15:51:52 cvonroes Exp $
 
-( $VERSION ) = '$Revision: 1.48 $ ' =~ /\$Revision:\s+([^\s]+)/;
+( $VERSION ) = '$Revision: 1.49 $ ' =~ /\$Revision:\s+([^\s]+)/;
 
 use strict;
 use LWP::UserAgent;
@@ -16,7 +16,7 @@ HTTP::QuickBase - Create a web shareable database in under a minute
 
 =head1 VERSION
 
-$Revision: 1.48 $
+$Revision: 1.49 $
 
 =head1 SYNOPSIS
 
@@ -38,7 +38,13 @@ $Revision: 1.48 $
 
  $qdb->authenticate($username, $password);
  $database_name= "GuestBook Template";
- $database_id = $qdb->getIDbyName($database_name);
+ 
+ #I don't recommend using the getIDbyName method because there are many tables with the same name.
+ #Instead you can discover the database_id of your table empirically.
+ #Read the follwing article to find out how:
+ #https://www.quickbase.com/db/6mztyxu8?a=dr&r=w
+ 
+ $database_id = "9mztyxu8";
  $clone_name = "My Guest Book";
  $database_clone_id = $qdb->cloneDatabase($database_id, $clone_name, "Description of my new database.");
 
@@ -188,6 +194,10 @@ The return associative array follows the same convention as the input associativ
 =item $qdb->getIDbyName($dbName)
 
 Returns the database ID of the database whose full name matches $dbName.
+I don't recommend using the getIDbyName method because there are many tables with the same name.
+Instead you can discover the database_id of your table empirically.
+Read the follwing article to find out how:
+https://www.quickbase.com/db/6mztyxu8?a=dr&r=w
 
 =item $qdb->GetRIDs ($QuickBaseID)
 
