@@ -1,8 +1,8 @@
 package HTTP::QuickBase;
 
-#Version $Id: QuickBase.pm,v 1.28 2001/06/12 20:12:30 cvonroes Exp $
+#Version $Id: QuickBase.pm,v 1.35 2002/02/25 21:40:35 cvonroes Exp $
 
-( $VERSION ) = '$Revision: 1.28 $ ' =~ /\$Revision:\s+([^\s]+)/;
+( $VERSION ) = '$Revision: 1.35 $ ' =~ /\$Revision:\s+([^\s]+)/;
 
 use strict;
 use LWP::UserAgent;
@@ -15,11 +15,11 @@ HTTP::QuickBase - Create a web shareable database in under a minute
 
 =head1 VERSION
 
-$Revision: 1.28 $
+$Revision: 1.35 $
 
 =head1 SYNOPSIS
 
- #see http://developer.intuit.com/quickbase for details of the underlying API
+ # see http://developer.intuit.com/quickbase for details of the underlying API.
  
  use HTTP::QuickBase;
  $qdb = HTTP::QuickBase->new();
@@ -191,7 +191,7 @@ Returns an array of all record IDs in the database identified by database ID $Qu
 
 =back
 
-=head2 Cloning
+=head2 Cloning and Creating from Scratch
 
 =over 4
 
@@ -204,6 +204,47 @@ Returns the dbid of the new database.
 
 =back
 
+=over 4
+
+=item $qdb->createDatabase($Name, $Description)
+
+Creates a database with the name $Name and description $Description
+
+Returns the dbid of the new database.
+
+=back
+
+=over 4
+
+=item $qdb->addField($QuickBaseID, $label, $type, $mode)
+
+Creates a field with the label $label of label, a type of $type and if the field is to be a formula field then set $mode to 'virtual' otherwise set it to the empty string.
+
+Returns the fid of the new field.
+
+=back
+
+=over 4
+
+=item $qdb->deleteField($QuickBaseID, $fid)
+
+Deletes the field with the field identifier of $fid.
+
+Returns nothing.
+
+=back
+
+=over 4
+
+=item $qdb->setFieldProperties($QuickBaseID, $fid, %properties)
+
+Modifies the field with the field identifier of $fid using the name-value pairs in %properties. Please see the QuickBase HTTP API document for more details.
+
+Returns nothing.
+
+=back
+
+
 =head2 Adding Information
 
 =over 4
@@ -215,6 +256,28 @@ Returns the record id of the new record. The keys of the associative array %reco
 field names of the database. If a particular key matches then the corresponding field in the new record is set to the value associated with the key.  
 
 =back
+
+=head2 Deleting Information
+
+=over 4
+
+=item $qdb->DeleteRecord($QuickBaseID, $rid)
+
+Deletes the record identified by the record identifier $rid.
+
+=back
+
+=over 4
+
+=item $qdb->PurgeRecords($QuickBaseID, $query)
+
+Deletes the records identified by the query, qname or qid in $query. Use the qid of '1' to delete all the records in a database.
+
+Please refer to https://www.quickbase.com/db/6mztyxu8?a=dr&r=2 for more details on the query parameter.
+
+=back
+
+
 
 =head2 Editing Information
 
@@ -248,7 +311,10 @@ From the database identified by $QuickBaseID, returns an associative array of fi
 
 =item $qdb->DoQuery($QuickBaseID, $query, $clist, $slist, $options)
 
-From the database identified by $QuickBaseID, returns an array of associative arrays of field names and values of the records selected by $query.
+From the database identified by $QuickBaseID, returns an array of
+associative arrays of field names and values of the records selected by
+$query, which can either be an actual query in QuickBase's query
+language, or a view name or number (qid or qname).
 
 The columns (fields) returned are determined by $clist, a period delimited list of field identifiers.
 
@@ -256,7 +322,7 @@ The sorting of the records is determined by $slist, a period delimited list of f
 
 Ascending or descending order of the sorts defined by $slist is controlled by $options.
 
-Please refer to https://www.quickbase.com/db/6mztyxu8?a=dr&r=2 for more details on the parameters for DoQuery 
+Please refer to https://www.quickbase.com/db/6mztyxu8?a=dr&r=2 for more details on the parameters for DoQuery.
 
 =back
 
@@ -314,8 +380,10 @@ None
 
 =head1 DIAGNOSTICS
 
-All errors are reported by the methods errorcode and errortext. For a complete list of errors please visit
-http://developer.intuit.com/quickbase/tools/QuickBaseAPI.html and scroll down to Appendix A.
+All errors are reported by the methods error and errortext. For a
+complete list of errors, please visit
+http://developer.intuit.com/quickbase/tools/QuickBaseAPI.html and scroll
+down to Appendix A.
 
 =head1 AUTHOR
 
@@ -349,7 +417,8 @@ sub new
 		'errortext' => undef,
 		'username' => undef,
 		'password' => undef,
-		'credentials' => undef
+		'credentials' => undef,
+		'proxy' => undef
 		}, $class;
 
 }
@@ -409,6 +478,15 @@ else
 	return $self->{'URLprefix'};
 	}
 }
+
+sub setProxy($proxyserver)
+{
+my($self, $proxyserver) = @_;
+$self->{'proxy'} = $proxyserver;
+return $self->{'proxy'};	
+}
+
+
 
 sub errortext()
 {
@@ -647,7 +725,9 @@ unless( $action =~ /^act=API_|\&act=API_/i)
 
 my $ua = new LWP::UserAgent;
 $ua->agent("QuickBasePerlAPI/2.0");
-
+if ($self->{'proxy'}){
+   $ua->proxy(['http','https'], $self->{'proxy'});
+   }
 my $req = new HTTP::Request;
 $req->method("GET");
 $req->uri($self->URLprefix()."/$QuickBaseDBid?$action");
@@ -678,6 +758,9 @@ my $prefix= $self->URLprefix();
 $prefix =~ s/\/db$/\/up/;
 my $ua = new LWP::UserAgent;
 $ua->agent("QuickBasePerlAPI/1.0");
+if ($self->{'proxy'}){
+   $ua->proxy(['http','https'], $self->{'proxy'});
+   }
 my $req = new HTTP::Request;
 $req->method("GET");
 if (!defined($rid)) {
@@ -710,11 +793,18 @@ if ($res->is_error) {
   return ($res->content, $res->headers);
 }
 
-sub PostURL($QuickBaseDBid, $action, $content)
+sub PostURL($QuickBaseDBid, $action, $content, $content_type)
 {
-my($self, $QuickBaseDBid, $action, $content) = @_;
-my $ua = new LWP::UserAgent;
+my $self = shift;
+my $QuickBaseDBid = shift;
+my $action = shift;
+my $content = shift;
+my $content_type = shift || 'application/x-www-form-urlencoded';
 
+my $ua = new LWP::UserAgent;
+if ($self->{'proxy'}){
+   $ua->proxy(['http','https'], $self->{'proxy'});
+   }
 $ua->agent("QuickBasePerlAPI/1.0");
 my $req = new HTTP::Request;
 $req->method("POST");
@@ -724,7 +814,7 @@ unless ($self->{'ticket'})
 	$self->{'ticket'}=$self->getTicket($self->{'username'},$self->{'password'});
 	}
 $req->header('Cookie' => "TICKET=$self->{'ticket'};");
-$req->content_type('application/x-www-form-urlencoded');
+$req->content_type($content_type);
 
 #This is where we post the info for the new record
 
@@ -746,6 +836,9 @@ sub PostAPIURL($QuickBaseDBid, $action, $content)
 my($self, $QuickBaseDBid, $action, $content) = @_;
 my $ua = new LWP::UserAgent;
 $ua->agent("QuickBasePerlAPI/2.0");
+if ($self->{'proxy'}){
+   $ua->proxy(['http','https'], $self->{'proxy'});
+   }
 my $req = new HTTP::Request;
 $req->method('POST');
 $req->uri($self->URLprefix()."/$QuickBaseDBid");
@@ -761,7 +854,11 @@ if ($self->{'ticket'})
 	}
 else
 	{
-	$content =~s/^<qdbapi>/<qdbapi>$self->{'credentials'}/;
+	if($content){
+		$content =~s/^<qdbapi>/<qdbapi>$self->{'credentials'}/;}
+    else{
+		$content ="<qdbapi>$self->{'credentials'}</qdbapi>";
+		}			
 	$req->content($content);
 	$res = $ua->request($req);
 	if($res->is_error()){
@@ -817,8 +914,8 @@ sub cloneDatabase ($QuickBaseID, $Name, $Description)
 	{
 	my ($self, $QuickBaseID, $Name, $Description)=@_;
 	my $content;
-	$content = "<qdbapi><sourcedbid>$QuickBaseID</sourcedbid><newdbname>$Name</newdbname><newdbdesc>$Description</newdbdesc></qdbapi>";
-	my $res = $self->PostAPIURL ("main", "API_CloneDatabase", $content);
+	$content = "<qdbapi><newdbname>$Name</newdbname><newdbdesc>$Description</newdbdesc></qdbapi>";
+	my $res = $self->PostAPIURL ($QuickBaseID, "API_CloneDatabase", $content);
 	if($res->content =~ /<newdbid>(.*)<\/newdbid>/ ){
 		return $1;
 		}
@@ -828,7 +925,103 @@ sub cloneDatabase ($QuickBaseID, $Name, $Description)
 		}
 	}
 
+sub createDatabase ($Name, $Description)
+	{
+	my ($self, $Name, $Description)=@_;
+	my $content;
+	$content = "<qdbapi><dbname>$Name</dbname><dbdesc>$Description</dbdesc></qdbapi>";
+	my $res = $self->PostAPIURL ("main", "API_CreateDatabase", $content);
+	if($res->content =~ /<dbid>(.*)<\/dbid>/ ){
+		return $1;
+		}
+	else
+		{
+		return "";
+		}
+	}	
 
+sub addField ($QuickBaseID, $label, $type, $mode)
+	{
+	my ($self, $QuickBaseID, $label, $type, $mode)=@_;
+	my $content;
+	$content = "<qdbapi><label>$label</label><type>$type</type>";
+	if ($mode)
+	   {
+	   $content .= "<mode>virtual</mode></qdbapi>";
+	   }
+	else
+		{
+	   $content .= "</qdbapi>";		
+		}
+	my $res = $self->PostAPIURL ($QuickBaseID, "API_AddField", $content);
+	if($res->content =~ /<fid>(.*)<\/fid>/ ){
+		return $1;
+		}
+	else
+		{
+		return "";
+		}	
+	}
+
+sub deleteField ($QuickBaseID, $fid)
+	{
+	my ($self, $QuickBaseID, $fid)=@_;
+	my $content;
+	$content = "<qdbapi><fid>$fid</fid></qdbapi>";
+	my $res = $self->PostAPIURL ($QuickBaseID, "API_DeleteField", $content);
+	}
+	
+sub setFieldProperties ($QuickBaseID, $fid, %properties)
+	{
+	my ($self, $QuickBaseID, $fid, %properties)=@_;
+	my $content;
+	my $property;
+	my $value;
+	$content = "<qdbapi><fid>$fid</fid>";
+	foreach $property (keys %properties)
+			{
+			$content .= "<$property>$properties{$property}</$property>";
+			}
+   $content .= "</qdbapi>";		
+	my $res = $self->PostAPIURL ($QuickBaseID, "API_SetFieldProperties", $content);
+	if($res->content =~ /<fid>(.*)<\/fid>/ ){
+		return $1;
+		}
+	else
+		{
+		return "";
+		}	
+	}
+
+
+sub purgeRecords ($QuickBaseID, $query)
+	{
+	my ($self, $QuickBaseID, $query)=@_;
+	
+	my $content;
+	if ($query =~ /^\{.*\}$/)
+		{
+		$content = "<qdbapi><query>$query</query></qdbapi>";
+		}
+	elsif ($query =~ /^\d+$/)
+		{
+		$content = "<qdbapi><qid>$query</qid></qdbapi>";
+		}
+	else 
+		{
+		$content = "<qdbapi><qname>$query</qname></qdbapi>";
+		}
+	my $res = $self->PostAPIURL ($QuickBaseID, "API_PurgeRecords", $content);
+	if($res->content =~ /<num_records_deleted>(.*)<\/num_records_deleted>/ ){
+		return $1;
+		}
+	else
+		{
+		return "";
+		}	
+	}
+	
+	
 sub doQuery ($QuickBaseID, $query, $clist, $slist, $options)
 	{
 	my ($self, $QuickBaseID, $query, $clist, $slist, $options)=@_;
@@ -1215,5 +1408,58 @@ sub hash32 ($number){
     if($number == 30) {return '8';}
     if($number == 31) {return '9';}
 }
+
+
+
+sub unencode32 ($number){
+  my ($self, $number) = @_;
+  my $result = 0;
+  while ($number ne ""){
+    my $l = length($number);
+    my $firstchar = substr($number, 0, 1);
+    $result = ($result * 32) + $self->unhash32($firstchar);
+    $number = substr($number, 1, $l-1);
+  }
+  return $result;
+}
+
+
+
+sub unhash32 ($number) {
+  my ($self, $number) = @_;
+  if($number eq 'a')  {return 0;}
+  if($number eq 'b')  {return 1;}
+  if($number eq 'c')  {return 2;}
+  if($number eq 'd')  {return 3;}
+  if($number eq 'e')  {return 4;}
+  if($number eq 'f')  {return 5;}
+  if($number eq 'g')  {return 6;}
+  if($number eq 'h')  {return 7;}
+  if($number eq 'i')  {return 8;}
+  if($number eq 'j')  {return 9;}
+  if($number eq 'k') {return 10;}
+  if($number eq 'm') {return 11;}
+  if($number eq 'n') {return 12;}
+  if($number eq 'p') {return 13;}
+  if($number eq 'q') {return 14;}
+  if($number eq 'r') {return 15;}
+  if($number eq 's') {return 16;}
+  if($number eq 't') {return 17;}
+  if($number eq 'u') {return 18;}
+  if($number eq 'v') {return 19;}
+  if($number eq 'w') {return 20;}
+  if($number eq 'x') {return 21;}
+  if($number eq 'y') {return 22;}
+  if($number eq 'z') {return 23;}
+  if($number eq '2') {return 24;}
+  if($number eq '3') {return 25;}
+  if($number eq '4') {return 26;}
+  if($number eq '5') {return 27;}
+  if($number eq '6') {return 28;}
+  if($number eq '7') {return 29;}
+  if($number eq '8') {return 30;}
+  if($number eq '9') {return 31;}
+}
+
 
 1;
