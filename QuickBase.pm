@@ -1,8 +1,8 @@
 package HTTP::QuickBase;
 
-#Version $Id: QuickBase.pm,v 1.40 2002/09/18 15:37:55 cvonroes Exp $
+#Version $Id: QuickBase.pm,v 1.41 2002/09/20 15:00:57 cvonroes Exp $
 
-( $VERSION ) = '$Revision: 1.40 $ ' =~ /\$Revision:\s+([^\s]+)/;
+( $VERSION ) = '$Revision: 1.41 $ ' =~ /\$Revision:\s+([^\s]+)/;
 
 use strict;
 use LWP::UserAgent;
@@ -15,7 +15,7 @@ HTTP::QuickBase - Create a web shareable database in under a minute
 
 =head1 VERSION
 
-$Revision: 1.40 $
+$Revision: 1.41 $
 
 =head1 SYNOPSIS
 
@@ -867,7 +867,8 @@ else
 		$content =~s/^<qdbapi>/<qdbapi>$self->{'credentials'}/;}
     else{
 		$content ="<qdbapi>$self->{'credentials'}</qdbapi>";
-		}			
+		}		
+	$content = "<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?>" . $content;
 	$req->content($content);
 	$res = $ua->request($req);
 	if($res->is_error()){
