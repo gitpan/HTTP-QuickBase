@@ -1,8 +1,8 @@
 package HTTP::QuickBase;
 
-#Version $Id: QuickBase.pm,v 1.26 2001/04/17 19:54:49 cvonroes Exp $
+#Version $Id: QuickBase.pm,v 1.27 2001/05/07 17:57:30 cvonroes Exp $
 
-( $VERSION ) = '$Revision: 1.26 $ ' =~ /\$Revision:\s+([^\s]+)/;
+( $VERSION ) = '$Revision: 1.27 $ ' =~ /\$Revision:\s+([^\s]+)/;
 
 use strict;
 use LWP::UserAgent;
@@ -12,6 +12,10 @@ use LWP::UserAgent;
 =head1 NAME
 
 HTTP::QuickBase - Create a web shareable database in under a minute
+
+=head1 VERSION
+
+$Revision: 1.27 $
 
 =head1 SYNOPSIS
 
@@ -100,7 +104,6 @@ HTTP::QuickBase - Create a web shareable database in under a minute
  #going to the View design page of your QuickBase database and filling in the form. Hit the "Display" button and
  #look at the URL in the browser "Address" window. The View design page is accessible from any database home
  #page by clicking on VIEWS at the top left and then clicking on "New View..." in the lower left.
-
 
 =head1 REQUIRES
 
@@ -562,7 +565,9 @@ $content =    "<qdbapi>".
               " <rid>$rid</rid>".
               "</qdbapi>";
 	my $res = $self->PostAPIURL ($QuickBaseDBid, "API_GetRecordInfo", $content);
-	@record=$res->content =~ /<([A-Z\-\.0-9]+)>([^<]*)<\/\1>/isg;
+	my $recordXML = $res->content;
+	$recordXML =~ s/<br\/>/\n/ig;
+	@record = $recordXML =~ /<([A-Z\-\.0-9]+)>([^<]*)<\/\1>/isg;
 	my $count = 0;
 	my $record;
 
@@ -1155,7 +1160,7 @@ sub xml_escape ($rest) {
 sub xml_unescape ($rest) {
     my ($self, $rest) = @_;
 	unless(defined($rest)){return "";}
-    $rest   =~ s/<br\/>//ig;
+    $rest   =~ s/<br\/>/\n/ig;
     $rest   =~ s/&lt;/</g;
     $rest   =~ s/&gt;/>/g;
     $rest   =~ s/&amp;/&/g;
