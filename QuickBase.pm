@@ -1,8 +1,8 @@
 package HTTP::QuickBase;
 
-#Version $Id: QuickBase.pm,v 1.39 2002/08/30 15:48:36 cvonroes Exp $
+#Version $Id: QuickBase.pm,v 1.40 2002/09/18 15:37:55 cvonroes Exp $
 
-( $VERSION ) = '$Revision: 1.39 $ ' =~ /\$Revision:\s+([^\s]+)/;
+( $VERSION ) = '$Revision: 1.40 $ ' =~ /\$Revision:\s+([^\s]+)/;
 
 use strict;
 use LWP::UserAgent;
@@ -15,7 +15,7 @@ HTTP::QuickBase - Create a web shareable database in under a minute
 
 =head1 VERSION
 
-$Revision: 1.39 $
+$Revision: 1.40 $
 
 =head1 SYNOPSIS
 
@@ -775,16 +775,9 @@ if ($self->{'proxy'}){
    }
 my $req = new HTTP::Request;
 $req->method("GET");
-if (!defined($rid)) {
-  $rid = "";
-}
 
-if ($rid eq "") {
-  $req->uri($prefix."/$QuickBaseDBid/f/$filename");
-}
-else {
-  $req->uri($prefix."/$QuickBaseDBid/f/r".$self->encode32($rid)."/$filename");
-}
+$req->uri($prefix."/$QuickBaseDBid/g/r".$self->encode32($rid)."/e".$self->encode32($fid)."/");
+
 
 unless ($self->{'ticket'})
 	{
