@@ -1,8 +1,8 @@
 package HTTP::QuickBase;
 
-#Version $Id: QuickBase.pm,v 1.27 2001/05/07 17:57:30 cvonroes Exp $
+#Version $Id: QuickBase.pm,v 1.28 2001/06/12 20:12:30 cvonroes Exp $
 
-( $VERSION ) = '$Revision: 1.27 $ ' =~ /\$Revision:\s+([^\s]+)/;
+( $VERSION ) = '$Revision: 1.28 $ ' =~ /\$Revision:\s+([^\s]+)/;
 
 use strict;
 use LWP::UserAgent;
@@ -15,7 +15,7 @@ HTTP::QuickBase - Create a web shareable database in under a minute
 
 =head1 VERSION
 
-$Revision: 1.27 $
+$Revision: 1.28 $
 
 =head1 SYNOPSIS
 
@@ -893,7 +893,7 @@ sub getCompleteCSV ($QuickBaseID)
 	my $fid;
 	my @ids;
 	my $result;
-	$result = $self->PostAPIURL ($QuickBaseID, "API_GetSchema", "")->content;
+	$result = $self->PostAPIURL ($QuickBaseID, "API_GetSchema", "<qdbapi></qdbapi>")->content;
 	@ids  = $result =~ /<field[^>]*\sid="(\d+)"/sig;
 	foreach $fid (@ids){
 			$clist .= "$fid.";
@@ -905,7 +905,7 @@ sub getCompleteCSV ($QuickBaseID)
 sub GetRIDs ($QuickBaseID)
 {
 	my ($self, $QuickBaseID) = @_;
-	my $content;
+	my $content="<qdbapi></qdbapi>";
 	my $fid;
 	$self->PostAPIURL($QuickBaseID,"API_GetSchema",$content)->content =~ /<field id="(\d+)".* field_type="recordid" /;
 	$fid = $1;
