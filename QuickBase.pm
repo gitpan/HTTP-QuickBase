@@ -1,8 +1,8 @@
 package HTTP::QuickBase;
 
-#Version $Id: QuickBase.pm,v 1.49 2004/04/22 15:51:52 cvonroes Exp $
+#Version $Id: QuickBase.pm,v 1.50 2006/01/03 21:50:59 cvonroes Exp $
 
-( $VERSION ) = '$Revision: 1.49 $ ' =~ /\$Revision:\s+([^\s]+)/;
+( $VERSION ) = '$Revision: 1.50 $ ' =~ /\$Revision:\s+([^\s]+)/;
 
 use strict;
 use LWP::UserAgent;
@@ -16,7 +16,7 @@ HTTP::QuickBase - Create a web shareable database in under a minute
 
 =head1 VERSION
 
-$Revision: 1.49 $
+$Revision: 1.50 $
 
 =head1 SYNOPSIS
 
@@ -883,43 +883,41 @@ $req->uri($self->URLprefix()."/$QuickBaseDBid");
 
 $req->content_type('text/xml');
 $req->header('QUICKBASE-ACTION' => "$action");
+if($content =~ /^<qdbapi>/)
+    {
+    $content =~s/^<qdbapi>/<qdbapi>$self->{'credentials'}/;
+    }
+elsif($content eq "" || !defined($content)) 
+    {
+    $content ="<qdbapi>$self->{'credentials'}</qdbapi>";
+    }
+if($content =~ /^<qdbapi>/)
+    {
+    $content = "<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?>" . $content;
+    }
 my $res;
 if ($self->{'ticket'})
-	{
-	$req->header('Cookie' => "TICKET=$self->{'ticket'};");
-	$req->content($content);
-	$res = $ua->request($req);
-	}
-else
-	{
-	if($content){
-		$content =~s/^<qdbapi>/<qdbapi>$self->{'credentials'}/;}
-    else{
-		$content ="<qdbapi>$self->{'credentials'}</qdbapi>";
-		}		
-	$content = "<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?>" . $content;
-	$req->content($content);
-	$res = $ua->request($req);
-	if($res->is_error()){
-		$self->{'error'} = $res->code;
-    	$self->{'errortext'} =$res->message;
-		return $res;
-		}
-	if (defined ($res->header('Set-Cookie')) && $res->header('Set-Cookie') =~ /TICKET=(.+?);/)
-		{
-		$self->{'ticket'} = $1;
-		$self->{'credentials'} = "<ticket>$self->{'ticket'}</ticket>";
-		}
-	elsif ($res->content =~ /<ticket>(.+?)<\/ticket>/)
-		{
-		$self->{'ticket'} = $1;
-		$self->{'credentials'} = "<ticket>$self->{'ticket'}</ticket>";
-		}
-	else
-		{
-		$self->{'ticket'} = "";
-		}
-	}
+    {
+    $req->header('Cookie' => "TICKET=$self->{'ticket'};");
+    }
+$req->content($content);
+$res = $ua->request($req);
+if($res->is_error()){
+        $self->{'error'} = $res->code;
+$self->{'errortext'} =$res->message;
+        return $res;
+        }
+if (defined ($res->header('Set-Cookie')) && $res->header('Set-Cookie') =~ /TICKET=(.+?);/)
+        {
+        $self->{'ticket'} = $1;
+        $self->{'credentials'} = "<ticket>$self->{'ticket'}</ticket>";
+        }
+elsif ($res->content =~ /<ticket>(.+?)<\/ticket>/)
+        {
+        $self->{'ticket'} = $1;
+        $self->{'credentials'} = "<ticket>$self->{'ticket'}</ticket>";
+        }
+
 $res->content =~ /<errcode>(.*?)<\/errcode>.*?<errtext>(.*?)<\/errtext>/s;
 $self->{'error'} = $1;
 $self->{'errortext'} = $2;
