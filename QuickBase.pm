@@ -1,8 +1,8 @@
 package HTTP::QuickBase;
 
-#Version $Id: QuickBase.pm,v 1.50 2006/01/03 21:50:59 cvonroes Exp $
+#Version $Id: QuickBase.pm,v 1.51 2006/09/14 18:17:44 cvonroes Exp $
 
-( $VERSION ) = '$Revision: 1.50 $ ' =~ /\$Revision:\s+([^\s]+)/;
+( $VERSION ) = '$Revision: 1.51 $ ' =~ /\$Revision:\s+([^\s]+)/;
 
 use strict;
 use LWP::UserAgent;
@@ -16,7 +16,7 @@ HTTP::QuickBase - Create a web shareable database in under a minute
 
 =head1 VERSION
 
-$Revision: 1.50 $
+$Revision: 1.51 $
 
 =head1 SYNOPSIS
 
@@ -447,7 +447,8 @@ sub new
 		'username' => undef,
 		'password' => undef,
 		'credentials' => undef,
-		'proxy' => undef
+		'proxy' => undef,
+		'realmhost' => undef
 		}, $class;
 
 }
@@ -519,7 +520,12 @@ $self->{'proxy'} = $proxyserver;
 return $self->{'proxy'};	
 }
 
-
+sub setRealmHost($)
+{
+my($self, $realmhost) = @_;
+$self->{'realmhost'} = $realmhost;
+return $self->{'realmhost'};	
+}
 
 sub errortext()
 {
@@ -879,7 +885,14 @@ if ($self->{'proxy'}){
    }
 my $req = new HTTP::Request;
 $req->method('POST');
-$req->uri($self->URLprefix()."/$QuickBaseDBid");
+if($self->{'realmhost'})
+    {
+    $req->uri($self->URLprefix()."/$QuickBaseDBid?realmhost=$self->{'realmhost'}");
+    }
+else
+    {
+    $req->uri($self->URLprefix()."/$QuickBaseDBid");
+    }
 
 $req->content_type('text/xml');
 $req->header('QUICKBASE-ACTION' => "$action");
@@ -924,7 +937,11 @@ $self->{'errortext'} = $2;
 if ($res->content =~ /<errdetail>(.*?)<\/errdetail>/s)
     {
     $self->{'errortext'} = $1;
-    }		
+    }
+if($self->{'error'} eq '11')
+	{
+    $self->{'errortext'} .= "\nXML request:\n" . $content;
+	}
 return $res;
 }
 
