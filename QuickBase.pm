@@ -1,8 +1,8 @@
 package HTTP::QuickBase;
 
-#Version $Id: QuickBase.pm,v 1.51 2006/09/14 18:17:44 cvonroes Exp $
+#Version $Id: QuickBase.pm,v 1.53 2006/12/05 17:25:23 cvonroes Exp $
 
-( $VERSION ) = '$Revision: 1.51 $ ' =~ /\$Revision:\s+([^\s]+)/;
+( $VERSION ) = '$Revision: 1.53 $ ' =~ /\$Revision:\s+([^\s]+)/;
 
 use strict;
 use LWP::UserAgent;
@@ -16,7 +16,7 @@ HTTP::QuickBase - Create a web shareable database in under a minute
 
 =head1 VERSION
 
-$Revision: 1.51 $
+$Revision: 1.53 $
 
 =head1 SYNOPSIS
 
@@ -1457,6 +1457,7 @@ sub xml_unescape ($) {
     $rest   =~ s/&gt;/>/g;
     $rest   =~ s/&amp;/&/g;
     $rest   =~ s/&apos;/'/g;
+	$rest   =~ s/&quot;/"/g;
 	$rest   =~ s/&#([0-9]{2,3});/chr($1)/eg;
 	return $rest;
 } 
@@ -1604,7 +1605,7 @@ sub createFieldXML($$)
 	else
             {
             $value = $self->xml_escape($value);
-            return "<field name='$tag'>$value</field>";
+            return "<field $nameattribute='$tag'>$value</field>";
             }
 }
 
