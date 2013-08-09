@@ -1,8 +1,8 @@
 package HTTP::QuickBase;
 
-#Version $Id: QuickBase.pm,v 1.53 2006/12/05 17:25:23 cvonroes Exp $
+#Version $Id: QuickBase.pm,v 1.54 2013/08/09 15:19:23 cvonroes Exp $
 
-( $VERSION ) = '$Revision: 1.53 $ ' =~ /\$Revision:\s+([^\s]+)/;
+( $VERSION ) = '$Revision: 1.54 $ ' =~ /\$Revision:\s+([^\s]+)/;
 
 use strict;
 use LWP::UserAgent;
@@ -16,7 +16,7 @@ HTTP::QuickBase - Create a web shareable database in under a minute
 
 =head1 VERSION
 
-$Revision: 1.53 $
+$Revision: 1.54 $
 
 =head1 SYNOPSIS
 
@@ -49,17 +49,7 @@ $Revision: 1.53 $
  $database_clone_id = $qdb->cloneDatabase($database_id, $clone_name, "Description of my new database.");
 
 
- #The values for View are 'Read', 'ReadOwn' and  'ReadNone'
- #The values for Modify are 'Modify', 'ModifyOwn' and  'ModifyNone'
- #The values for View and Administer are just either blank or something other than blank
- %permissions=("view" => "", "add" => "1", "modify" => "","admin" => "");
- # Let anyone on the Internet add new records to my guest book
- $qdb->ChangePermissions($database_clone_id, "Anyone with Internet access", %permissions );
- %permissions=("view" => "any", "add" => "1", "modify" => "any","admin" => "1");
- # Let the user Barney do anything he wants with the database
- $qdb->ChangePermissions($database_clone_id, "Barney", %permissions );
- 
- #Let's put something into the new guest book
+  #Let's put something into the new guest book
  $Name = "Fred Flinstone";
  $dphone = "978-533-2189";
  $ephone = "781-839-1555";
@@ -162,28 +152,6 @@ access to the database.
 =item $qdb->authenticate($username, $password)
 
 Sets the username and password used for subsequent method invocations
-
-=item $qdb->ChangePermissions($QuickBaseDBid, $usergroup, %permissions)
-
-Adds users or groups to a database's access control list, or modifies the permissions 
-levels for existing members of a database's access control list.
-$QuickBaseID identifies the database. $usergroup is either a QuickBase screen name, an email address of
-a registered QuickBase user or the name of a QuickBase group. Only users with administrator permissions on a database
-can change the permissions of other users with respect to that same database. 
-
-The keys of the input %permissions, along with their valid values is as follows:
-
-view none, own, any
-
-modify none, own, any
-
-create false, true
-
-admin false, true
-
-If one or more of the four permission is not included in %permissions, its setting is not changed.
-If you just want to check on the permission settings for a user or group, just call ChangePermission with an empty %permissions.
-The return associative array follows the same convention as the input associative array except that every permission level is reported.
 
 =back
 
@@ -401,6 +369,137 @@ Appendix A for all possible error messages.
 =back
 
 
+=head2 New API calls added in 2008
+
+
+
+
+=over 4
+
+=item CreateTable($QuickBaseDBid, $pnoun)
+
+Add a table to an existing application.
+
+Returns the dbid of the new table.
+
+=back
+
+
+
+=over 4
+
+=item AddUserToRole($QuickBaseDBid, $userid, $roleid)
+
+Add a user to a role in an application.
+
+=back
+
+
+
+=over 4
+
+=item ChangeUserRole($QuickBaseDBid, $userid, $roleid, $newroleid)
+
+Change the role of a user in an application.
+
+=back
+
+
+
+=over 4
+
+=item GetDBvar($QuickBaseDBid, $varname)
+
+Retrieve the value of an application variable.
+
+=back
+
+=over 4
+
+=item GetRoleInfo($QuickBaseDBid)
+
+Retrieve the list of Roles defined for an application.
+
+=back
+
+=over 4
+
+=item GetUserInfo($email)
+
+Retrieve a hash containing the login, name, and id of a user, given the user's email address. 
+
+=back
+
+
+=over 4
+
+=item GetUserRole($QuickBaseDBid,$userid)
+
+Retrieve the Role information for a user
+
+=back
+
+=over 4
+
+=item ProvisionUser($QuickBaseDBid,$roleid, $email, $fname, $lname)
+
+Add the user information to QuickBase in preparation for inviting the user for the first time to view a QuickBase application.
+
+=back
+
+
+=over 4
+
+=item GetOneTimeTicket
+
+Retrieve a ticket valid for the next 5 minutes only. Designed for uploading files.
+
+=back
+
+=over 4
+
+=item RemoveUserFromRole($QuickBaseDBid, $userid, $roleid)
+
+Remove a user from a role in an application.
+
+=back
+
+
+=over 4
+
+=item RenameApp($QuickBaseDBid,$newappname)
+
+Change the name of an application.
+
+=back
+
+
+=over 4
+
+=item SetDBvar($QuickBaseDBid, $varname, $value)
+
+Set the value of an application variable.
+
+=back
+
+
+=over 4
+
+=item SendInvitation($QuickBaseDBid, $userid)
+
+Send an email from QuickBase inviting a user to an application. 
+
+=back
+
+
+=over 4
+
+=item UserRoles($QuickBaseDBid)
+
+Returns an Xml Document of information about the roles defined for an application.
+
+=back
+
 
 
 =head1 CLASS VARIABLES
@@ -420,7 +519,7 @@ Claude von Roesgen, claude_von_roesgen@intuit.com
 
 =head1 COPYRIGHT
 
-Copyright (c) 1999-2001 Intuit, Inc. All rights reserved.
+Copyright (c) 1999-2008 Intuit, Inc. All rights reserved.
 This program is free software; you can redistribute it and/or
 modify it under the same terms as Perl itself.
 
@@ -442,6 +541,7 @@ sub new
 	$self = bless {
 		'URLprefix' => $prefix || "https://www.quickbase.com/db" ,
 		'ticket' => undef,
+		'apptoken' => "",
 		'error' => undef,
 		'errortext' => undef,
 		'username' => undef,
@@ -453,7 +553,6 @@ sub new
 
 }
 
-
 sub authenticate ($$)
 {
 my($self, $username, $password) = @_;
@@ -464,6 +563,12 @@ my($self, $username, $password) = @_;
 	$self->{'credentials'} = "<username>$username<\/username><password>$password<\/password>";
 	$self->{'ticket'}="";
 	return "";
+}
+
+sub setAppToken($)
+{
+  my($self,$apptoken) = @_;
+  $self->{'apptoken'} = $apptoken;
 }
 
 sub getTicket()
@@ -568,7 +673,45 @@ if ($xml =~ /<rid>(.*)<\/rid>/ )
 return "";
 }
 
-		
+sub AddReplaceDBPage($$$$$)
+{
+  my($self,$QuickBaseDBid, $pageid, $pagename, $pagetype, $pagebody) = @_;
+  
+  my $content = "<qdbapi>";
+  $content .= "<pageid>$pageid</pageid>" if $pageid ne "";
+  $content .= "<pagename>$pagename</pagename>" if $pagename ne "";
+  $content .= "<pagetype>$pagetype</pagetype><pagebody>".$self->xml_escape($pagebody)."</pagebody></qdbapi>";
+  
+  my $res = $self->PostAPIURL ($QuickBaseDBid, "API_AddReplaceDBPage", $content)->content;
+  
+  if($res =~ /<pageid>(.*)<\/pageid>/ ){
+    return $1;
+    }
+  elsif($res =~ /<pageID>(.*)<\/pageID>/ ){
+    return $1;
+    }
+  else
+    {
+    return "";
+    }
+}
+
+sub AddUserToRole($$$)
+{
+  my($self,$QuickBaseDBid, $userid, $roleid) = @_;
+  my $content = "<qdbapi><userid>$userid</userid><roleid>$roleid</roleid></qdbapi>";
+  $self->PostAPIURL ($QuickBaseDBid, "API_AddUserToRole", $content);
+  return "";
+}
+
+sub ChangeUserRole($$$$)
+{
+  my($self,$QuickBaseDBid, $userid, $roleid, $newroleid) = @_;
+  my $content = "<qdbapi><userid>$userid</userid><roleid>$roleid</roleid></qdbapi>";
+  $self->PostAPIURL ($QuickBaseDBid, "API_AddUserToRole", $content);
+  return "";
+}
+
 sub ChangeRecordOwner($$$)
 {
     my($self, $QuickBaseDBid, $rid, $newowner);
@@ -578,89 +721,28 @@ sub ChangeRecordOwner($$$)
     return"";
 }
 
-sub ChangePermissions($$%)
+sub CreateTable($$)
 {
-my($self, $QuickBaseDBid, $usergroup, %permissions) = @_;
-my $content =    "<qdbapi><uname>$usergroup</uname>";
-my %newPermissions = ( "view" => "none", "modify" => "none", "create" => "false", "admin" => "false");
+  my($self,$QuickBaseDBid, $pnoun) = @_;
+  my $content = "<qdbapi><pnoun>".$self->xml_escape($pnoun)."</pnoun></qdbapi>";
+  my $res = $self->PostAPIURL ($QuickBaseDBid, "API_CreateTable", $content)->content;
+  if($res =~ /<newdbid>(.*)<\/newdbid>/ ){
+    return $1;
+    }
+  elsif($res =~ /<newDBID>(.*)<\/newDBID>/ ){
+    return $1;
+    }
+  else
+    {
+    return "";
+    }
+}
 
-
-my $permission;
-
-foreach $permission (keys %permissions)
-	{
-	if($permission =~ /modify/i)
-		{
-		if($permissions{$permission} eq "")
-			{
-			$permissions{$permission}='none';
-			}
-		elsif($permissions{$permission}=~/own/i)
-			{
-			$permissions{$permission}="own";
-			}
-		else
-			{
-			$permissions{$permission}="any";
-			}
-		$content.= "<modify>$permissions{$permission}</modify>";
-		}
-	if($permission =~ /read|view/i)
-		{
-		if($permissions{$permission} eq "")
-			{
-			$permissions{$permission}='none';
-			}
-		elsif($permissions{$permission}=~/own/i)
-			{
-			$permissions{$permission}="own";
-			}
-		else
-			{
-			$permissions{$permission}="any";
-			}
-		$content.= "<view>$permissions{$permission}</view>";
-		}
-	if($permission =~ /create|add|new/i)
-		{
-		if($permissions{$permission} eq "")
-			{
-			$permissions{$permission}='false';
-			}
-		else
-			{
-			$permissions{$permission}='true';
-			}		
-		$content.= "<create>$permissions{$permission}</create>";
-		}
-	if($permission =~ /admin/i)
-		{
-		if($permissions{$permission} eq "")
-			{
-			$permissions{$permission}='false';
-			}
-		else
-			{
-			$permissions{$permission}='true';
-			}		
-		$content.= "<admin>$permissions{$permission}</admin>";
-		}
-	}
-$content .= "</qdbapi>";
-my $result = $self->PostAPIURL ($QuickBaseDBid, "API_ChangePermission", $content)->content;
-if ($result =~ /<view>(.*?)<\/view>/){
-   $newPermissions{"view"} = $1;
-   }
-if ($result =~ /<modify>(.*?)<\/modify>/){
-   $newPermissions{"modify"} = $1;
-   }
-if ($result =~ /<create>(.*?)<\/create>/){
-   $newPermissions{"create"} = $1;
-   }
-if ($result =~ /<admin>(.*?)<\/admin>/){
-   $newPermissions{"admin"} = $1;
-   }
-return %newPermissions;
+sub DeleteDatabase($)
+{
+  my($self,$QuickBaseDBid) = @_;
+  $self->PostAPIURL($QuickBaseDBid, "API_DeleteDatabase", "");
+  return "";
 }
 
 sub DeleteRecord($$)
@@ -671,6 +753,168 @@ my $content =    "<qdbapi>".
               " <rid>$rid</rid>".
               "</qdbapi>";
 $self->PostAPIURL ($QuickBaseDBid, "API_DeleteRecord", $content)->content;
+}
+
+sub FieldAddChoices($$@)
+{
+  my($self,$QuickBaseDBid, $fid, @choices) = @_;
+  
+  my $content = "<qdbapi><fid>$fid</fid>";
+  my $choice;
+  foreach $choice (@choices)
+	  {
+		$content .= "<choice>$choice</choice>";
+	  }
+  $content .= "</qdbapi>";
+  
+  my $res = $self->PostAPIURL ($QuickBaseDBid, "API_FieldAddChoices", $content)->content;
+  
+  if($res =~ /<numadded>(.*)<\/numadded>/ ){
+    return $1;
+    }
+  else
+    {
+    return "";
+    }
+}
+
+sub FieldRemoveChoices($$@)
+{
+  my($self,$QuickBaseDBid, $fid, @choices) = @_;
+  
+  my $content = "<qdbapi><fid>$fid</fid>";
+  my $choice;
+  foreach $choice (@choices)
+	  {
+		$content .= "<choice>$choice</choice>";
+	  }
+  $content .= "</qdbapi>";  
+  
+  my $res = $self->PostAPIURL ($QuickBaseDBid, "API_FieldRemoveChoices", $content)->content;
+  
+  if($res =~ /<numremoved>(.*)<\/numremoved>/ ){
+    return $1;
+    }
+  else
+    {
+    return "";
+    }
+}
+
+sub GenAddRecordForm($%)
+{
+  my($self,$QuickBaseDBid,%fields) = @_;
+  my $content = "<qdbapi>";
+  my $field;
+  foreach $field (keys %fields)
+	  {
+		$content .= "<field name=\'$field\'>$fields{$field}</field>";
+	  }
+  $content .= "</qdbapi>";  
+  $self->PostAPIURL ($QuickBaseDBid, "API_GenAddRecordForm", $content)->content;
+}
+
+sub GenResultsTable($$$$$$$)
+{
+  my($self, $QuickBaseDBid, $query, $clist, $slist, $jht, $jsa, $options) = @_;
+  my $content = "<qdbapi>";
+  $content .= "<query>$query</query>" if $query ne ""; 
+  $content .= "<clist>$clist</clist>" if $clist ne "";  
+  $content .= "<slist>$slist</slist>" if $slist ne "" ;
+  $content .= "<jht>$jht</jht>" if $jht ne "";  
+  $content .= "<jsa>$jsa</jsa>" if $jsa ne "";
+  $content .= "<options>$options</options>" if $options ne "";
+  $content .= "</qdbapi>";  
+  $self->PostAPIURL ($QuickBaseDBid, "API_GenAddRecordForm", $content)->content;
+}
+
+sub GetDBInfo($)
+{
+  my($self,$QuickBaseDBid) = @_;
+  
+  my $res = $self->PostAPIURL ($QuickBaseDBid, "API_GetDBInfo", "")->content;
+  
+  my %dbInfo;
+  if($res =~ /<dbname>(.*)<\/dbname>/ ){
+    $dbInfo{"dbname"} = $1;
+    }
+  if($res =~ /<version>(.*)<\/version>/ ){
+    $dbInfo{"version"} = $1;
+    }
+  if($res =~ /<lastRecModTime>(.*)<\/lastRecModTime>/ ){
+    $dbInfo{"lastRecModTime"} = $1;
+    }
+  if($res =~ /<lastModifiedTime>(.*)<\/lastModifiedTime>/ ){
+    $dbInfo{"lastModifiedTime"} = $1;
+    }
+  if($res =~ /<createdTime>(.*)<\/createdTime>/ ){
+    $dbInfo{"createdTime"} = $1;
+    }
+  if($res =~ /<lastAccessTime>(.*)<\/lastAccessTime>/ ){
+    $dbInfo{"lastAccessTime"} = $1;
+    }
+  if($res =~ /<numRecords>(.*)<\/numRecords>/ ){
+    $dbInfo{"numRecords"} = $1;
+    }
+  if($res =~ /<mgrID>(.*)<\/mgrID>/ ){
+    $dbInfo{"mgrID"} = $1;
+    }
+  if($res =~ /<mgrName>(.*)<\/mgrName>/ ){
+    $dbInfo{"mgrName"} = $1;
+    }
+  return %dbInfo;  
+}
+
+sub GetDBPage($$$)
+{
+   my($self, $QuickBaseDBid, $pageid, $pagename) = @_;
+   
+  my $content = "<qdbapi>";
+  $content .= "<pageid>$pageid</pageid>" if $pageid ne "";
+  $content .= "<pagename>$pagename</pagename>" if $pagename ne "";
+  $content .= "</qdbapi>";
+  
+  $self->PostAPIURL ($QuickBaseDBid, "API_GetDBPage", $content)->content;
+}
+
+sub GetDBvar($$)
+{
+   my($self,$QuickBaseDBid, $varname) = @_;
+   my $content = "<qdbapi><varname>$varname</varname></qdbapi>";
+   my $res = $self->PostAPIURL($QuickBaseDBid, "API_GetDBvar", $content)->content;
+   if($res =~ /<value>(.*)<\/value>/ ){
+      return $1;
+      }
+    else
+      {
+      return "";
+      }
+}
+
+sub GetNumRecords($)
+{
+   my($self,$QuickBaseDBid) = @_;
+   my $res = $self->PostAPIURL ($QuickBaseDBid, "API_GetNumRecords", "")->content;
+   if($res =~ /<num_records>(.*)<\/num_records>/ ){
+      return $1;
+      }
+    else
+      {
+      return "";
+      }
+}
+
+sub GetOneTimeTicket()
+{
+   my($self) = @_;
+   my $res = $self->PostAPIURL ("main", "API_GetOneTimeTicket", "")->content;
+   if($res =~ /<ticket>(.*)<\/ticket>/ ){
+      return $1;
+      }
+    else
+      {
+      return "";
+      }
 }
 
 sub GetRecord($$)
@@ -753,6 +997,131 @@ $content =    "<qdbapi>".
 		}
 
 	return %record;
+}
+
+sub GetRecordAsHTML($$$)
+{
+    my($self, $QuickBaseDBid, $rid, $jht) = @_;
+    my $content = "<qdbapi><rid>$rid</rid>";
+    $content .= "<jht>$jht</jht>" if $jht  ne "";
+    $content .= "</qdbapi>";
+    $self->PostAPIURL ($QuickBaseDBid, "API_GetRecordAsHTML", $content)->content;
+}
+
+sub GetRecordInfo($$)
+{
+    my($self, $QuickBaseDBid, $rid) = @_;
+    my $content = "<qdbapi><rid>$rid</rid></qdbapi>";
+    $self->PostAPIURL ($QuickBaseDBid, "API_GetRecordInfo", $content)->content;
+}
+
+sub GetRoleInfo($)
+{
+    my($self, $QuickBaseDBid) = @_;
+    $self->PostAPIURL ($QuickBaseDBid, "API_GetRoleInfo", "")->content;
+}
+
+sub GetSchema
+{
+    my($self,$QuickBaseDBid) = @_;
+    $self->PostAPIURL ($QuickBaseDBid, "API_GetSchema", "")->content;
+}
+
+sub GetUserInfo($)
+{
+    my($self,$email) = @_;
+    
+    my $content = "<qdbapi><email>$email</email></qdbapi>";
+    
+    my $res = $self->PostAPIURL ("main", "API_GetUserInfo", $content)->content;
+    
+    my %userInfo;
+    if($res =~ /<login>(.*)<\/login>/ ){
+      $userInfo{"login"} = $1
+    }  
+    if($res =~ /<name>(.*)<\/name>/ ){
+      $userInfo{"name"} = $1
+    }  
+    if($res =~ /<firstName>(.*)<\/firstName>/ ){
+      $userInfo{"firstName"} = $1
+    }  
+    if($res =~ /<lastName>(.*)<\/lastName>/ ){
+      $userInfo{"lastName"} = $1
+    }  
+    if($res =~ /id=\"(.*)\"/ ){
+      $userInfo{"id"} = $1
+    }  
+    return %userInfo;
+}
+
+sub GetUserRole($$)
+{
+    my($self,$QuickBaseDBid,$userid) = @_;
+    my $content = "<qdbapi><userid>$userid</userid></qdbapi>";
+    $self->PostAPIURL ($QuickBaseDBid, "API_GetUserRole", $content)->content;
+}
+
+sub GrantedDBs()
+{
+    my($self) = @_;
+    $self->PostAPIURL ("main", "API_GrantedDBs", "")->content;
+}
+
+sub ProvisionUser($$$$$)
+{
+   my($self, $QuickBaseDBid,$roleid, $email, $fname, $lname) = @_;
+   my $content = "<qdbapi>";
+   $content .= "<roleid>$roleid</roleid>";
+   $content .= "<email>$email</email>";
+   $content .= "<fname>$fname</fname>";
+   $content .= "<lname>$lname</lname>";
+   $content .= "</qdbapi>";
+   my $res = $self->PostAPIURL ($QuickBaseDBid, "API_ProvisionUser", $content)->content;
+   if($res =~ /<userid>(.*)<\/userid>/ ){
+      return $1;
+      }
+    else
+      {
+      return "";
+      }
+}
+
+sub RemoveUserFromRole($$$)
+{
+   my($self, $QuickBaseDBid, $userid, $roleid) = @_; 
+   my $content = "<qdbapi><userid>$userid</userid><roleid>$roleid</roleid></qdbapi>";
+   $self->PostAPIURL ($QuickBaseDBid, "API_RemoveUserFromRole", $content);
+   return ""; 
+}
+
+sub RenameApp($$)
+{
+   my($self,$QuickBaseDBid,$newappname) = @_;
+   my $content = "<qdbapi><newappname>" . $self->xml_escape($newappname) . "</newappname></qdbapi>";
+   $self->PostAPIURL ($QuickBaseDBid, "API_RenameApp", $content);
+   return "";
+}
+
+sub SendInvitation($$)
+{
+   my($self, $QuickBaseDBid, $userid) = @_;
+   my $content = "<qdbapi><userid>$userid</userid></qdbapi>";
+   $self->PostAPIURL ($QuickBaseDBid, "API_SendInvitation", $content);
+   return "";
+}
+
+sub SetDBvar($$$)
+{
+   my($self, $QuickBaseDBid, $varname, $value) = @_;
+   my $content = "<qdbapi><varname>$varname</varname><value>$value</value></qdbapi>";
+   $self->PostAPIURL ($QuickBaseDBid, "API_SetDBvar", $content);
+   return "";
+}
+
+sub UserRoles($)
+{
+   my($self,$QuickBaseDBid) = @_;
+   $self->PostAPIURL ($QuickBaseDBid, "API_UserRoles", "")->content;
 }
 
 sub GetURL($$)
@@ -896,6 +1265,12 @@ else
 
 $req->content_type('text/xml');
 $req->header('QUICKBASE-ACTION' => "$action");
+
+if ($self->{'apptoken'} ne "" && $self->{'credentials'} !~ /<apptoken>/)
+   {
+      $self->{'credentials'} .= "<apptoken>".$self->{'apptoken'}."</apptoken>";
+   }
+
 if($content =~ /^<qdbapi>/)
     {
     $content =~s/^<qdbapi>/<qdbapi>$self->{'credentials'}/;
@@ -913,6 +1288,7 @@ if ($self->{'ticket'})
     {
     $req->header('Cookie' => "TICKET=$self->{'ticket'};");
     }
+    
 $req->content($content);
 $res = $ua->request($req);
 if($res->is_error()){
@@ -967,6 +1343,11 @@ else
 	}
 }
 
+sub FindDBByName($)
+{
+   my ($self, $dbName)= @_;
+   $self->getIDbyName($dbName);
+}
 
 sub cloneDatabase ($$$)
 	{
@@ -990,8 +1371,15 @@ sub createDatabase ($$)
 	$content = "<qdbapi><dbname>".$self->xml_escape($Name)."</dbname><dbdesc>".$self->xml_escape($Description)."</dbdesc></qdbapi>";
 	my $res = $self->PostAPIURL ("main", "API_CreateDatabase", $content);
 	if($res->content =~ /<dbid>(.*)<\/dbid>/ ){
-		return $1;
-		}
+    my $dbid  = $1;
+	  if($res->content =~ /<appdbid>(.*)<\/appdbid>/ ){
+          return ($dbid,$1);
+       }
+    else
+      {    
+		     return $1;
+		  }
+    }   
 	else
 		{
 		return "";
@@ -1028,7 +1416,7 @@ sub deleteField ($$)
 	$content = "<qdbapi><fid>$fid</fid></qdbapi>";
 	my $res = $self->PostAPIURL ($QuickBaseID, "API_DeleteField", $content);
 	}
-	
+
 sub setFieldProperties ($$%)
 	{
 	my ($self, $QuickBaseID, $fid, %properties)=@_;
@@ -1055,7 +1443,7 @@ sub setFieldProperties ($$%)
 sub purgeRecords ($$)
 	{
 	my ($self, $QuickBaseID, $query)=@_;
-	
+
 	my $content;
 	if ($query =~ /^\{.*\}$/)
 		{
@@ -1084,11 +1472,11 @@ sub DoQuery ($$$$$)
 	my ($self, $QuickBaseID, $query, $clist, $slist, $options)=@_;
 	return $self->doQuery ($QuickBaseID, $query, $clist, $slist, $options);
 	}	
-	
+
 sub doQuery ($$$$$)
 	{
 	my ($self, $QuickBaseID, $query, $clist, $slist, $options)=@_;
-	
+
 	my $content;
 	my $result;
 	my @result;
@@ -1140,7 +1528,7 @@ sub doQuery ($$$$$)
 		}
 	return @result;
 	}
-	
+
 sub getCompleteCSV ($)
 	{
 	my ($self, $QuickBaseID)=@_;
@@ -1176,7 +1564,7 @@ sub EditRecord ($$%)
 	my $name;
 	my $content = "<qdbapi><rid>$rid</rid>";
 	my $tag;
-	
+
 foreach $name (keys(%recorddata))
 	{
 	$tag=$name;
@@ -1219,7 +1607,7 @@ sub ImportFromCSV ($$$$)
 {
  	my ($self, $QuickBaseID, $CSVData, $clist, $skipfirst) = @_;
 	my $content = "<qdbapi><clist>$clist</clist>";
-	
+
 	$content .= "<records_csv><![CDATA[$CSVData]]></records_csv>";
 	if($skipfirst)
 		{
@@ -1245,9 +1633,9 @@ sub GetNextField ($$$$)
 	my $false=0;
 	my $true=1;
 
-	
+
 	$$fieldpointer = "";
-	
+
 	while ($true)
 		{
 		if ($p >= $endofdata)
@@ -1258,7 +1646,7 @@ sub GetNextField ($$$$)
 			}
 
 		$c = substr($$datapointer, $p, 1);
-	
+
 		if($state == $DOUBLE_QUOTE_TEST)
 			{
 			# These checks are ordered by likelihood */
@@ -1375,12 +1763,12 @@ sub GetNextLine ($$$$$$)
 		{
 		$$offsetpointer++;
 		}	
-	
+
 	if ($$offsetpointer >= length($$data))
 		{
 		return $false;
 		}
-	
+
 	$$lineIsEmptyPtr = $true;
 	my $moreToCome;
 	do {
@@ -1423,7 +1811,7 @@ sub ParseDelimited ($$)
 				}
 			}
 		}
-		
+
 
 	# If there are any lines which are shorter than the longest
 	# lines, fill them out with "" entries here. This simplifies
@@ -1435,7 +1823,7 @@ sub ParseDelimited ($$)
 			push (@$i, "");
 			}
 		}
-		
+
 	return @output;
 
 	}
@@ -1472,7 +1860,7 @@ sub encode32 ($){
 	}
 	return $result;
 }
-	
+
 sub hash32 ($){
 	my ($self, $number) = @_;
 	if($number == 0)  {return 'a';}
