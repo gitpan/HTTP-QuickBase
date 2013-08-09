@@ -1,8 +1,8 @@
 package HTTP::QuickBase;
 
-#Version $Id: QuickBase.pm,v 1.54 2013/08/09 15:19:23 cvonroes Exp $
+#Version $Id: QuickBase.pm,v 1.55 2013/08/09 15:29:23 cvonroes Exp $
 
-( $VERSION ) = '$Revision: 1.54 $ ' =~ /\$Revision:\s+([^\s]+)/;
+( $VERSION ) = '$Revision: 1.55 $ ' =~ /\$Revision:\s+([^\s]+)/;
 
 use strict;
 use LWP::UserAgent;
